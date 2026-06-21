@@ -1,0 +1,6 @@
+{
+  "name": "For Isha",
+  "description": "An intimate, beautifully crafted secret garden containing interactive handwritten letters, comfort tools, a breathing exercise visualizer, and custom reassurance drawers.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
