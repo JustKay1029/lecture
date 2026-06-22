@@ -47,7 +47,7 @@ export default function LonelyView({ onBack }: LonelyViewProps) {
     } catch (e) {}
   };
 
-  const handleSendPlane = () => {
+  const handleSendPlane = async () => {
     if (!noteText.trim()) return;
 
     setIsSending(true);
@@ -57,12 +57,35 @@ export default function LonelyView({ onBack }: LonelyViewProps) {
     const selectedReassurance = REASSURANCES[Math.floor(Math.random() * REASSURANCES.length)];
     setActiveNote(selectedReassurance);
 
+    // Send to email via EmailJS REST API
+    try {
+      await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          service_id: import.meta.env.VITE_EMAILJS_SERVICE_ID,
+          template_id: import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+          user_id: import.meta.env.VITE_EMAILJS_PUBLIC_KEY,
+          template_params: {
+            name: 'Isha',
+            email: 'isha@garden.app',
+            message: noteText,
+          },
+        }),
+      });
+    } catch (error) {
+      console.error('Failed to dispatch note to EmailJS:', error);
+    }
+
     // Duration matching the flying plane transition
     setTimeout(() => {
       setIsSending(false);
       setIsSent(true);
     }, 1800);
   };
+
 
   const handleReset = () => {
     setNoteText('');
