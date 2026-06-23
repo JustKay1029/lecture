@@ -2,40 +2,129 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Play, Pause, SkipForward, Music, Volume2, VolumeX, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Song } from '../types';
+
+import akhiyanMp3 from '../assets/Akhiyan - Harkirat Sangha.mp3';
+import chosenMp3 from '../assets/Chosen.mp3';
+import donaliMp3 from '../assets/DONALI - Harkirat Sangha.mp3';
+import dilNuMp3 from '../assets/Dil Nu.mp3';
+import hypnoticMp3 from '../assets/Hypnotic - Taz.mp3';
+import midnightCallMp3 from '../assets/Midnight Call - Harkirat Sangha.mp3';
+import restlessMp3 from '../assets/Restless - Sarrb.mp3';
+import sensationMp3 from '../assets/Sensation.mp3';
+import siftMp3 from '../assets/Sift.mp3';
+import tereTeMp3 from '../assets/Tere Te.mp3';
 import thinkingOfYouMp3 from '../assets/Thinking Of You - AP Dhillon.mp3';
+import toxicMp3 from '../assets/Toxic.mp3';
 
 const PLAYLIST: Song[] = [
   {
-    id: '3',
+    id: '1',
     title: 'Thinking Of You',
     artist: 'AP Dhillon',
     url: thinkingOfYouMp3,
-    coverUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&auto=format&fit=crop', // beautiful pink flower theme
-  },
-  {
-    id: '1',
-    title: 'Midnight Reverie',
-    artist: 'Cozy Piano Suite',
-    url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3', // reliable instrumental stream
-    coverUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDi86qeaBZjx75FRceDWc_0y9fIl0r5rVWI4Tx4Ji8HpY-Qwj2Icw7Qb4bO5mhNgaqFD64rXXu9lqAC-KEBZ4DZFs6yYVv6XlbenwWawe9JUlAkHBmDIxgMHOCGoFltmQHpQkpnVSKrmB-Al5PrslvUXx5Om_xcGLZgzyuLtSwgvadygz6UAjBNaRDpog9M5TP-zIOUCfdezwxS47dLW0fvhbvS6RBp6kuGtOlOgf6PGJxjgCRXdZgA3zmLL9V0Q4adpZkCJ3skid9u',
+    coverUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&auto=format&fit=crop',
   },
   {
     id: '2',
-    title: 'Our Sweet Melody',
-    artist: 'Lofi Valentine',
-    url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-12.mp3',
-    coverUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDi86qeaBZjx75FRceDWc_0y9fIl0r5rVWI4Tx4Ji8HpY-Qwj2Icw7Qb4bO5mhNgaqFD64rXXu9lqAC-KEBZ4DZFs6yYVv6XlbenwWawe9JUlAkHBmDIxgMHOCGoFltmQHpQkpnVSKrmB-Al5PrslvUXx5Om_xcGLZgzyuLtSwgvadygz6UAjBNaRDpog9M5TP-zIOUCfdezwxS47dLW0fvhbvS6RBp6kuGtOlOgf6PGJxjgCRXdZgA3zmLL9V0Q4adpZkCJ3skid9u',
+    title: 'Akhiyan',
+    artist: 'Harkirat Sangha',
+    url: akhiyanMp3,
+    coverUrl: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=600&auto=format&fit=crop',
+  },
+  {
+    id: '3',
+    title: 'Chosen',
+    artist: 'Sidhu Moose Wala',
+    url: chosenMp3,
+    coverUrl: 'https://images.unsplash.com/photo-1490730141103-6cac27aaab94?w=600&auto=format&fit=crop',
+  },
+  {
+    id: '4',
+    title: 'DONALI',
+    artist: 'Harkirat Sangha',
+    url: donaliMp3,
+    coverUrl: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=600&auto=format&fit=crop',
+  },
+  {
+    id: '5',
+    title: 'Dil Nu',
+    artist: 'AP Dhillon',
+    url: dilNuMp3,
+    coverUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&auto=format&fit=crop',
+  },
+  {
+    id: '6',
+    title: 'Hypnotic',
+    artist: 'Taz',
+    url: hypnoticMp3,
+    coverUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=600&auto=format&fit=crop',
+  },
+  {
+    id: '7',
+    title: 'Midnight Call',
+    artist: 'Harkirat Sangha',
+    url: midnightCallMp3,
+    coverUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop',
+  },
+  {
+    id: '8',
+    title: 'Restless',
+    artist: 'Sarrb',
+    url: restlessMp3,
+    coverUrl: 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=600&auto=format&fit=crop',
+  },
+  {
+    id: '9',
+    title: 'Sensation',
+    artist: 'Unknown',
+    url: sensationMp3,
+    coverUrl: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=600&auto=format&fit=crop',
+  },
+  {
+    id: '10',
+    title: 'Sift',
+    artist: 'Unknown',
+    url: siftMp3,
+    coverUrl: 'https://images.unsplash.com/photo-1487180142328-0c4e37023af5?w=600&auto=format&fit=crop',
+  },
+  {
+    id: '11',
+    title: 'Tere Te',
+    artist: 'AP Dhillon',
+    url: tereTeMp3,
+    coverUrl: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=600&auto=format&fit=crop',
+  },
+  {
+    id: '12',
+    title: 'Toxic',
+    artist: 'AP Dhillon',
+    url: toxicMp3,
+    coverUrl: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=600&auto=format&fit=crop',
   }
 ];
 
 export default function MusicPlayer() {
+  const [shuffledPlaylist, setShuffledPlaylist] = useState<Song[]>(PLAYLIST);
   const [currentSongIndex, setCurrentSongIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const song = PLAYLIST[currentSongIndex];
+  const song = shuffledPlaylist[currentSongIndex] || PLAYLIST[0];
+
+  // Helper to shuffle the playlist array
+  useEffect(() => {
+    const shuffleArray = (array: Song[]) => {
+      const arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    };
+    setShuffledPlaylist(shuffleArray(PLAYLIST));
+  }, []);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -48,7 +137,7 @@ export default function MusicPlayer() {
         audioRef.current.pause();
       }
     }
-  }, [isPlaying, currentSongIndex]);
+  }, [isPlaying, currentSongIndex, shuffledPlaylist]);
 
   const handlePlayPause = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -57,7 +146,7 @@ export default function MusicPlayer() {
 
   const handleNext = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setCurrentSongIndex((prev) => (prev + 1) % PLAYLIST.length);
+    setCurrentSongIndex((prev) => (prev + 1) % shuffledPlaylist.length);
     setIsPlaying(true);
   };
 
@@ -70,6 +159,7 @@ export default function MusicPlayer() {
   };
 
   return (
+
     <div className="fixed top-6 right-6 z-50">
       {/* Audio element */}
       <audio

@@ -9,6 +9,7 @@ import ComfortView from './components/ComfortView';
 import LonelyView from './components/LonelyView';
 import DistractionView from './components/DistractionView';
 import ScrapbookView from './components/ScrapbookView';
+import BirthdayView from './components/BirthdayView';
 
 export default function App() {
   const [viewState, setViewState] = useState<ScreenState>('garden');
@@ -84,6 +85,10 @@ export default function App() {
 
         {viewState === 'scrapbook' && (
           <ScrapbookView onBack={handleBackToGarden} />
+        )}
+
+        {viewState === 'birthday' && (
+          <BirthdayView onBack={handleBackToGarden} />
         )}
       </div>
 

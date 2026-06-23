@@ -1,4 +1,4 @@
-export type ScreenState = 'garden' | 'miss-you' | 'cramps' | 'comfort' | 'lonely' | 'distraction' | 'scrapbook';
+export type ScreenState = 'garden' | 'miss-you' | 'cramps' | 'comfort' | 'lonely' | 'distraction' | 'scrapbook' | 'birthday';
 
 export interface StarThought {
   id: string;

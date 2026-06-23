@@ -33,6 +33,7 @@ export default function SlabsDrawer({ onMoodSelect, isOpen, setIsOpen }: SlabsDr
 
   const moods: Array<{ id: ScreenState; emoji: string; text: string; bg: string }> = [
     { id: 'scrapbook', emoji: '📖', text: 'Our Memory Scrapbook', bg: 'rgba(255, 179, 181, 0.04)' },
+    { id: 'birthday', emoji: '🤫', text: 'Secret 🤫', bg: 'rgba(255, 179, 181, 0.04)' },
     { id: 'miss-you', emoji: '❤️', text: 'I Miss You', bg: 'rgba(255, 179, 181, 0.04)' },
     { id: 'cramps', emoji: '🤕', text: 'My Cramps Are Hurting', bg: 'rgba(255, 179, 181, 0.04)' },
     { id: 'comfort', emoji: '🫂', text: 'I Need Comfort', bg: 'rgba(255, 179, 181, 0.04)' },
