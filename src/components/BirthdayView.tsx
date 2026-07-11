@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Volume2, VolumeX, ArrowLeft, ArrowRight, Send } from 'lucide-react';
+import { CircularGallery, GalleryItem } from './ui/circular-gallery';
+
 import sunflowerMp3 from '../assets/Post_Malone_Swae_Lee_-_Sunflower_Spider-Man_Into_The_Spider-Verse_(mp3.pm).mp3';
 
 // Import the 5 memory photos
@@ -52,15 +54,15 @@ const SUNFLOWER_LYRICS = [
   { time: 145.8, text: "You're the sunflower, you're the sunflower" }
 ];
 
-// Shifting background gradients matching each page
+// Shifting background gradients matching each page's photo theme
 const BG_GRADIENTS = [
-  'linear-gradient(135deg, #2b0005 0%, #0d0002 100%)', // Page 1: Deep Crimson Letter
-  'linear-gradient(135deg, #1b0a2a 0%, #08030d 100%)', // Page 2: Soft Purple Photo 1
-  'linear-gradient(135deg, #2a1b05 0%, #0d0801 100%)', // Page 3: Warm Amber Photo 2
-  'linear-gradient(135deg, #052618 0%, #010d08 100%)', // Page 4: Cozy Emerald Photo 3
-  'linear-gradient(135deg, #2a2205 0%, #0d0a01 100%)', // Page 5: Sunset Bronze Photo 4
-  'linear-gradient(135deg, #15052a 0%, #06010d 100%)', // Page 6: Evening Violet Photo 5
-  'linear-gradient(135deg, #05142a 0%, #01060d 100%)'  // Page 7: Proposal Midnight Blue
+  'linear-gradient(135deg, #1f080c 0%, #060002 100%)', // Page 1: Crimson Letter
+  'linear-gradient(135deg, #11071d 0%, #04010a 100%)', // Page 2: Purple Photo 1
+  'linear-gradient(135deg, #1c1103 0%, #080500 100%)', // Page 3: Warm Amber Photo 2
+  'linear-gradient(135deg, #031c11 0%, #000805 100%)', // Page 4: Cozy Emerald Photo 3
+  'linear-gradient(135deg, #1c1803 0%, #080600 100%)', // Page 5: Sunset Bronze Photo 4
+  'linear-gradient(135deg, #0e031c 0%, #04010a 100%)', // Page 6: Evening Violet Photo 5
+  'linear-gradient(135deg, #030e1c 0%, #00040a 100%)'  // Page 7: Proposal Midnight Blue
 ];
 
 export default function BirthdayView({ onBack }: BirthdayViewProps) {
@@ -200,7 +202,6 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
         if (!bgMusicRef.current) return;
         const currentSeconds = bgMusicRef.current.currentTime;
         
-        // Locate matching lyric index
         let matchingIndex = 0;
         for (let i = 0; i < SUNFLOWER_LYRICS.length; i++) {
           if (currentSeconds >= SUNFLOWER_LYRICS[i].time) {
@@ -211,7 +212,6 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
         }
         setCurrentLyricIndex(matchingIndex);
 
-        // Center the active lyrics item in view
         if (lyricsContainerRef.current) {
           const activeEl = lyricsContainerRef.current.children[matchingIndex] as HTMLElement;
           if (activeEl) {
@@ -260,6 +260,43 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
     }
   };
 
+  // Gallery items for the 3D gallery
+  const galleryItems: GalleryItem[] = [
+    {
+      common: 'Our Beginning',
+      binomial: 'Photo 1',
+      photo: { url: photo1, text: 'Memory photo 1', pos: 'center', by: 'Us' }
+    },
+    {
+      common: 'Pure Joy',
+      binomial: 'Photo 2',
+      photo: { url: photo2, text: 'Memory photo 2', pos: 'center', by: 'Us' }
+    },
+    {
+      common: 'Quiet Warmth',
+      binomial: 'Photo 3',
+      photo: { url: photo3, text: 'Memory photo 3', pos: 'center', by: 'Us' }
+    },
+    {
+      common: 'Together Always',
+      binomial: 'Photo 4',
+      photo: { url: photo4, text: 'Memory photo 4', pos: 'center', by: 'Us' }
+    },
+    {
+      common: 'My Favorite Smile',
+      binomial: 'Photo 5',
+      photo: { url: photo5, text: 'Memory photo 5', pos: 'center', by: 'Us' }
+    }
+  ];
+
+  // Helper to map page index to 3D circular gallery rotation angles
+  // Page index mapping: Letter (page 0), Photos 1-5 (pages 1 to 5), Proposal (page 6)
+  const getGalleryRotation = () => {
+    if (bookPage < 1) return 0;
+    if (bookPage > 5) return -288; // remain on last photo rotation
+    return -(bookPage - 1) * 72; // Snaps to 0deg, -72deg, -144deg, -216deg, -288deg
+  };
+
   return (
     <div 
       style={{ background: stage === 'letter' ? BG_GRADIENTS[bookPage] : undefined }}
@@ -285,7 +322,7 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
       </button>
 
       {/* Primary Workspace */}
-      <main className="relative z-10 w-full max-w-5xl mx-auto flex flex-col items-center justify-center py-20 min-h-screen">
+      <main className="relative z-10 w-full max-w-6xl mx-auto flex flex-col items-center justify-center py-20 min-h-screen">
         <AnimatePresence mode="wait">
           
           {/* STAGE 1: COUNTDOWN */}
@@ -307,40 +344,25 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
                 </p>
               </div>
 
-              {/* Vector SVG Gift Box */}
+              {/* Minimal Clean CSS Gift Box (Anti-AI-slop look) */}
               <motion.div
                 animate={{
-                  y: [0, -16, 0],
-                  rotate: [0, 1.5, -1.5, 0],
+                  y: [0, -12, 0],
                 }}
                 transition={{
-                  duration: 5,
+                  duration: 4,
                   ease: 'easeInOut',
                   repeat: Infinity,
                 }}
-                className="w-48 h-48 flex items-center justify-center"
+                className="relative w-36 h-36 flex items-center justify-center"
               >
-                <svg viewBox="0 0 100 100" className="w-full h-full filter drop-shadow-[0_8px_20px_rgba(128,0,32,0.4)]">
-                  {/* Glowing glow circle background */}
-                  <circle cx="50" cy="50" r="45" fill="url(#pinkGlow)" className="animate-pulse" />
-                  {/* Box bottom base */}
-                  <rect x="25" y="45" width="50" height="40" rx="3" fill="#800020" />
-                  {/* Box Lid */}
-                  <rect x="21" y="36" width="58" height="10" rx="2" fill="#a41031" />
-                  {/* Ribbon cross base */}
-                  <rect x="47" y="45" width="6" height="40" fill="#ffd700" />
-                  <rect x="47" y="36" width="6" height="10" fill="#ffd700" />
-                  {/* Ribbon tie loop left */}
-                  <path d="M 49 36 C 40 25, 30 25, 45 36 Z" fill="#ffd700" />
-                  {/* Ribbon tie loop right */}
-                  <path d="M 51 36 C 60 25, 70 25, 55 36 Z" fill="#ffd700" />
-                  <defs>
-                    <radialGradient id="pinkGlow" cx="50%" cy="50%" r="50%">
-                      <stop offset="0%" stopColor="#ffabf3" stopOpacity="0.25" />
-                      <stop offset="100%" stopColor="#ffabf3" stopOpacity="0" />
-                    </radialGradient>
-                  </defs>
-                </svg>
+                {/* Clean Geometric Box Base */}
+                <div className="w-28 h-28 bg-[#800020] rounded-xl shadow-2xl relative border border-white/5 flex items-center justify-center">
+                  <div className="absolute inset-y-0 w-4 bg-[#ffd700]" />
+                  <div className="absolute inset-x-0 h-4 bg-[#ffd700]" />
+                  {/* Decorative minimalist golden ribbon knot */}
+                  <div className="absolute -top-3 w-8 h-8 rounded-full border-4 border-[#ffd700] bg-transparent" />
+                </div>
               </motion.div>
 
               {/* Timer Grid */}
@@ -393,50 +415,37 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
                 </p>
               </div>
 
-              {/* Vector SVG Birthday Cake */}
-              <div className="relative w-72 h-72 flex flex-col items-center justify-end pb-8">
-                {/* SVG Illustration Container */}
-                <svg viewBox="0 0 200 200" className="w-full h-full absolute inset-0 z-10 pointer-events-none">
-                  {/* Stand plate */}
-                  <ellipse cx="100" cy="170" rx="80" ry="12" fill="#4a525d" opacity="0.3" />
-                  <path d="M 40 170 C 40 180, 160 180, 160 170 Z" fill="#ffdada" opacity="0.2" />
+              {/* Minimal Clean CSS Cake (Anti-slop) */}
+              <div className="relative w-64 h-64 flex flex-col items-center justify-end pb-4">
+                {/* Plate stand */}
+                <div className="w-56 h-3 bg-white/10 rounded-full shadow-md mb-1" />
 
-                  {/* Tier 1 (Bottom Cake Layer) */}
-                  <rect x="40" y="105" width="120" height="60" rx="8" fill="#800020" />
-                  {/* Tier 1 Frosting ripples */}
-                  <path d="M 40 115 Q 50 125 60 115 Q 70 125 80 115 Q 90 125 100 115 Q 110 125 120 115 Q 130 125 140 115 Q 150 125 160 115" fill="none" stroke="#ffabf3" strokeWidth="4" />
-
-                  {/* Tier 2 (Top Cake Layer) */}
-                  <rect x="55" y="60" width="90" height="50" rx="6" fill="#a41031" />
-                  {/* Tier 2 Frosting drips */}
-                  <path d="M 55 70 C 65 80, 75 65, 85 75 C 95 65, 105 80, 115 70 C 125 80, 135 65, 145 70" fill="none" stroke="#ffdada" strokeWidth="3" />
-
-                  {/* Isha text overlay */}
-                  <text x="100" y="145" fill="#ffdada" fontSize="18" fontFamily="Georgia, serif" fontStyle="italic" textAnchor="middle" fontWeight="bold">Isha</text>
-                </svg>
-
-                {/* Actual interactive Candle triggers overlay */}
-                <div className="flex gap-10 mb-[105px] z-20">
-                  {candlesLit.map((lit, i) => (
-                    <div 
-                      key={i} 
-                      className="relative w-4 h-16 bg-gradient-to-t from-pink-500 via-[#ffdada] to-white rounded-t-sm shadow-md cursor-pointer hover:scale-105 transition-transform" 
-                      onClick={extinguishCandles}
-                    >
-                      {/* Animated flame */}
-                      {lit && (
-                        <motion.div
-                          animate={{
-                            scale: [1, 1.2, 0.9, 1.1, 1],
-                            y: [0, -3, 1, -2, 0],
-                            rotate: [0, 5, -5, 3, 0]
-                          }}
-                          transition={{ duration: 1 + Math.random() * 0.5, repeat: Infinity }}
-                          className="absolute -top-7 left-1/2 transform -translate-x-1/2 w-5 h-7 bg-gradient-to-t from-orange-600 via-amber-400 to-yellow-100 rounded-full shadow-[0_0_15px_#ff7b00] origin-bottom"
-                        />
-                      )}
-                    </div>
-                  ))}
+                {/* Cake Tier */}
+                <div className="w-44 h-24 bg-gradient-to-t from-[#800020] to-[#b31942] rounded-t-2xl relative border-t border-white/10 shadow-xl flex justify-center items-start pt-4">
+                  {/* Decorative frosting line */}
+                  <div className="absolute top-8 left-0 right-0 h-1 bg-[#ffdada]/20" />
+                  
+                  {/* Candle holders */}
+                  <div className="flex gap-8 -mt-10 z-20">
+                    {candlesLit.map((lit, i) => (
+                      <div 
+                        key={i} 
+                        className="relative w-3 h-10 bg-gradient-to-t from-pink-500 to-white rounded-t-sm shadow-sm cursor-pointer"
+                        onClick={extinguishCandles}
+                      >
+                        {lit && (
+                          <motion.div
+                            animate={{
+                              scale: [1, 1.15, 0.95, 1],
+                              opacity: [0.9, 1, 0.85, 0.9],
+                            }}
+                            transition={{ duration: 1.2, repeat: Infinity }}
+                            className="absolute -top-5 left-1/2 transform -translate-x-1/2 w-4 h-5 bg-gradient-to-t from-orange-500 via-yellow-400 to-white rounded-full shadow-[0_0_8px_#ff7b00]"
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -488,7 +497,7 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
                 </p>
               </div>
 
-              {/* Interactive Vector SVG Unwrapping Action */}
+              {/* Minimal CSS Gift Box interactive */}
               <div 
                 className="relative w-64 h-64 flex items-center justify-center cursor-pointer group" 
                 onClick={() => {
@@ -498,26 +507,16 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
                   }, 1600);
                 }}
               >
-                <div className="w-full h-full absolute inset-0 z-10 pointer-events-none">
-                  <svg viewBox="0 0 100 100" className="w-full h-full">
-                    {/* Box base bottom */}
-                    <rect x="25" y="45" width="50" height="40" rx="3" fill="#800020" className="filter drop-shadow-xl" />
-                    <rect x="47" y="45" width="6" height="40" fill="#ffd700" />
+                <motion.div
+                  animate={isLidOff ? { y: -150, opacity: 0, scale: 0.8 } : { y: [0, -10, 0] }}
+                  transition={isLidOff ? { duration: 1.2, ease: 'easeOut' } : { duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                  className="w-32 h-32 bg-[#800020] rounded-xl shadow-2xl relative border border-white/5 flex items-center justify-center"
+                >
+                  <div className="absolute inset-y-0 w-3 bg-[#ffd700]" />
+                  <div className="absolute inset-x-0 h-3 bg-[#ffd700]" />
+                  <div className="absolute -top-3 w-8 h-8 rounded-full border-4 border-[#ffd700] bg-transparent" />
+                </motion.div>
 
-                    {/* Shifting lid */}
-                    <motion.g
-                      animate={isLidOff ? { y: -60, rotate: 18, opacity: 0 } : { y: [0, -4, 0] }}
-                      transition={isLidOff ? { duration: 1.2, ease: 'easeOut' } : { duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                    >
-                      <rect x="21" y="36" width="58" height="10" rx="2" fill="#a41031" />
-                      <rect x="47" y="36" width="6" height="10" fill="#ffd700" />
-                      <path d="M 49 36 C 40 25, 30 25, 45 36 Z" fill="#ffd700" />
-                      <path d="M 51 36 C 60 25, 70 25, 55 36 Z" fill="#ffd700" />
-                    </motion.g>
-                  </svg>
-                </div>
-
-                {/* Explosion sparkles */}
                 {isLidOff && (
                   <motion.div
                     initial={{ scale: 0.2, opacity: 0 }}
@@ -532,7 +531,7 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
             </motion.div>
           )}
 
-          {/* STAGE 4: DYNAMIC Synced Lyrics (Left) & 7-Page Book (Right) */}
+          {/* STAGE 4: Synced Lyrics (Left) & Shifting Book Card (Right) */}
           {stage === 'letter' && (
             <motion.div
               key="letter-stage"
@@ -544,7 +543,7 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
               {/* Header bar controls */}
               <div className="w-full flex justify-between items-center px-2">
                 <div className="text-xs uppercase tracking-widest text-[#ffdada]/60 font-sans">
-                  Page {bookPage + 1} of 7
+                  Step {bookPage + 1} of 7
                 </div>
 
                 <button
@@ -561,12 +560,11 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
                 </button>
               </div>
 
-              {/* Layout splits into Lyrics (Left) and Book (Right) */}
-              <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
+              {/* Layout splits into Spotify Lyrics (Left) and Book Page (Right) */}
+              <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
                 
-                {/* LEFT SIDE: Apple/Spotify-style Synced Lyrics Panel */}
-                <div className="glass-card-custom rounded-3xl p-6 sm:p-8 border border-[#ffb3b5]/15 bg-black/45 backdrop-blur-xl shadow-2xl flex flex-col h-[65vh] relative overflow-hidden select-none">
-                  {/* Lyrics scroll body */}
+                {/* LEFT SIDE: Spotify/Apple Music Synced Lyrics Panel */}
+                <div className="glass-card-custom rounded-3xl p-6 sm:p-8 border border-white/10 bg-black/50 backdrop-blur-2xl shadow-2xl flex flex-col h-[65vh] relative overflow-hidden select-none">
                   <div 
                     ref={lyricsContainerRef}
                     className="flex-1 overflow-y-auto pr-2 space-y-6 flex flex-col scrollbar-none relative py-[20vh]"
@@ -580,7 +578,7 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
                           key={idx}
                           animate={{
                             opacity: isActive ? 1.0 : isPast ? 0.45 : 0.2,
-                            scale: isActive ? 1.02 : 1.0,
+                            scale: isActive ? 1.04 : 1.0,
                             textShadow: isActive ? '0 0 16px rgba(255,255,255,0.7)' : 'none',
                           }}
                           transition={{ duration: 0.4 }}
@@ -601,11 +599,11 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
                   </div>
                 </div>
 
-                {/* RIGHT SIDE: Interactive Page-Turning Book */}
-                <div className="glass-card-custom rounded-3xl p-8 sm:p-10 border border-[#ffb3b5]/15 bg-[#121414]/75 shadow-2xl flex flex-col h-[65vh] justify-between relative overflow-hidden">
+                {/* RIGHT SIDE: Interactive Presentation Card (Book Pages) */}
+                <div className="glass-card-custom rounded-3xl p-8 sm:p-10 border border-white/10 bg-black/35 backdrop-blur-md shadow-2xl flex flex-col h-[65vh] justify-between relative overflow-hidden">
                   
                   {/* Page transition stage */}
-                  <div className="flex-1 overflow-y-auto pr-1 scrollbar-custom">
+                  <div className="flex-1 overflow-y-auto pr-1 scrollbar-custom flex flex-col justify-center">
                     <AnimatePresence mode="wait">
                       <motion.div
                         key={bookPage}
@@ -613,13 +611,13 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: -25 }}
                         transition={{ duration: 0.4 }}
-                        className="h-full flex flex-col"
+                        className="h-full flex flex-col justify-center"
                       >
                         
                         {/* PAGE 1: THE LETTER */}
                         {bookPage === 0 && (
-                          <div className="flex flex-col gap-5 text-[#ffdada]/95">
-                            <h3 className="font-serif italic text-3xl text-[#ffb3b5] border-b border-[#ffb3b5]/20 pb-3">
+                          <div className="flex flex-col gap-5 text-[#ffdada]/95 py-4">
+                            <h3 className="font-serif italic text-3xl text-[#ffb3b5] border-b border-white/10 pb-3">
                               Happy Birthday, My Princess 🌹
                             </h3>
                             <p className="font-handwriting text-2.5xl leading-loose">
@@ -637,63 +635,28 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
                           </div>
                         )}
 
-                        {/* PHOTO PAGE 2 */}
-                        {bookPage === 1 && (
-                          <div className="flex flex-col items-center justify-center gap-6 h-full py-4">
-                            <div className="w-full max-h-[38vh] rounded-2xl overflow-hidden border border-[#ffb3b5]/20 shadow-xl bg-black/20">
-                              <img src={photo1} alt="Memory 1" className="w-full h-full object-contain object-center rounded-2xl select-none pointer-events-none max-h-[38vh]" />
+                        {/* PHOTO PAGES 2-6: CircularGallery Viewport */}
+                        {bookPage >= 1 && bookPage <= 5 && (
+                          <div className="relative w-full h-[45vh] flex flex-col items-center justify-center overflow-hidden">
+                            {/* Circular Gallery Container */}
+                            <div className="w-full h-full absolute inset-0 z-10 flex items-center justify-center">
+                              <CircularGallery 
+                                items={galleryItems} 
+                                radius={150} // Optimized radius to fit on card right side
+                                activeRotation={getGalleryRotation()}
+                              />
                             </div>
-                            <p className="font-handwriting text-2.5xl text-[#ffdadb] italic text-center mt-2">
-                              "Looking back at one of my favorite moments of you..."
-                            </p>
-                          </div>
-                        )}
-
-                        {/* PHOTO PAGE 3 */}
-                        {bookPage === 2 && (
-                          <div className="flex flex-col items-center justify-center gap-6 h-full py-4">
-                            <div className="w-full max-h-[38vh] rounded-2xl overflow-hidden border border-[#ffb3b5]/20 shadow-xl bg-black/20">
-                              <img src={photo2} alt="Memory 2" className="w-full h-full object-contain object-center rounded-2xl select-none pointer-events-none max-h-[38vh]" />
+                            
+                            {/* Subtle caption overlay card */}
+                            <div className="absolute bottom-2 z-20 bg-black/70 backdrop-blur-md px-6 py-2.5 rounded-full border border-white/10">
+                              <p className="font-handwriting text-2xl text-[#ffdadb] italic text-center">
+                                {bookPage === 1 && "Looking back at one of my favorite moments of you..."}
+                                {bookPage === 2 && "Every smile of yours prints a permanent light in my heart."}
+                                {bookPage === 3 && "Even in quiet spaces, your memory keeps me complete."}
+                                {bookPage === 4 && "You are my shelter, my peaceful sky, and my anchor."}
+                                {bookPage === 5 && "Thank you for being you, for every single second."}
+                              </p>
                             </div>
-                            <p className="font-handwriting text-2.5xl text-[#ffdadb] italic text-center mt-2">
-                              "Every smile of yours prints a permanent light in my heart."
-                            </p>
-                          </div>
-                        )}
-
-                        {/* PHOTO PAGE 4 */}
-                        {bookPage === 3 && (
-                          <div className="flex flex-col items-center justify-center gap-6 h-full py-4">
-                            <div className="w-full max-h-[38vh] rounded-2xl overflow-hidden border border-[#ffb3b5]/20 shadow-xl bg-black/20">
-                              <img src={photo3} alt="Memory 3" className="w-full h-full object-contain object-center rounded-2xl select-none pointer-events-none max-h-[38vh]" />
-                            </div>
-                            <p className="font-handwriting text-2.5xl text-[#ffdadb] italic text-center mt-2">
-                              "Even in quiet spaces, your memory keeps me complete."
-                            </p>
-                          </div>
-                        )}
-
-                        {/* PHOTO PAGE 5 */}
-                        {bookPage === 4 && (
-                          <div className="flex flex-col items-center justify-center gap-6 h-full py-4">
-                            <div className="w-full max-h-[38vh] rounded-2xl overflow-hidden border border-[#ffb3b5]/20 shadow-xl bg-black/20">
-                              <img src={photo4} alt="Memory 4" className="w-full h-full object-contain object-center rounded-2xl select-none pointer-events-none max-h-[38vh]" />
-                            </div>
-                            <p className="font-handwriting text-2.5xl text-[#ffdadb] italic text-center mt-2">
-                              "You are my shelter, my peaceful sky, and my anchor."
-                            </p>
-                          </div>
-                        )}
-
-                        {/* PHOTO PAGE 6 */}
-                        {bookPage === 5 && (
-                          <div className="flex flex-col items-center justify-center gap-6 h-full py-4">
-                            <div className="w-full max-h-[38vh] rounded-2xl overflow-hidden border border-[#ffb3b5]/20 shadow-xl bg-black/20">
-                              <img src={photo5} alt="Memory 5" className="w-full h-full object-contain object-center rounded-2xl select-none pointer-events-none max-h-[38vh]" />
-                            </div>
-                            <p className="font-handwriting text-2.5xl text-[#ffdadb] italic text-center mt-2">
-                              "Thank you for being you, for every single second."
-                            </p>
                           </div>
                         )}
 
@@ -715,7 +678,7 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
                                     onChange={(e) => setProposalAnswer(e.target.value)}
                                     disabled={isSendingProposal}
                                     placeholder="Write your answer to my heart here..."
-                                    className="w-full h-28 bg-[#121414]/50 border border-[#ffb3b5]/25 rounded-2xl p-4 focus:ring-1 focus:ring-[#ffabf3]/50 focus:outline-none text-[#ffdada] font-handwriting text-xl sm:text-2xl resize-none"
+                                    className="w-full h-28 bg-[#121414]/50 border border-white/10 rounded-2xl p-4 focus:ring-1 focus:ring-[#ffabf3]/50 focus:outline-none text-[#ffdada] font-handwriting text-xl sm:text-2xl resize-none"
                                   />
                                   
                                   <button
@@ -748,12 +711,12 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
                     </AnimatePresence>
                   </div>
 
-                  {/* Page-turn Controls */}
-                  <div className="flex justify-between items-center border-t border-[#ffb3b5]/15 pt-5 mt-4">
+                  {/* Page-turn Navigation */}
+                  <div className="flex justify-between items-center border-t border-white/10 pt-5 mt-4">
                     <button
                       onClick={() => setBookPage((prev) => Math.max(0, prev - 1))}
                       disabled={bookPage === 0}
-                      className="p-2 rounded-full border border-[#ffb3b5]/15 text-[#ffb3b5] hover:bg-[#800020]/25 transition-all disabled:opacity-30 disabled:cursor-default cursor-pointer"
+                      className="p-2 rounded-full border border-white/10 text-[#ffb3b5] hover:bg-[#800020]/25 transition-all disabled:opacity-30 disabled:cursor-default cursor-pointer"
                     >
                       <ArrowLeft size={16} />
                     </button>
@@ -765,7 +728,7 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
                     <button
                       onClick={() => setBookPage((prev) => Math.min(6, prev + 1))}
                       disabled={bookPage === 6}
-                      className="p-2 rounded-full border border-[#ffb3b5]/15 text-[#ffb3b5] hover:bg-[#800020]/25 transition-all disabled:opacity-30 disabled:cursor-default cursor-pointer"
+                      className="p-2 rounded-full border border-white/10 text-[#ffb3b5] hover:bg-[#800020]/25 transition-all disabled:opacity-30 disabled:cursor-default cursor-pointer"
                     >
                       <ArrowRight size={16} />
                     </button>
