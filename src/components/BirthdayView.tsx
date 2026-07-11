@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Volume2, VolumeX, ArrowLeft, ArrowRight, Send } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Send, Volume2, VolumeX } from 'lucide-react';
 import { CircularGallery, GalleryItem } from './ui/circular-gallery';
 
 import sunflowerMp3 from '../assets/Post_Malone_Swae_Lee_-_Sunflower_Spider-Man_Into_The_Spider-Verse_(mp3.pm).mp3';
@@ -17,42 +17,6 @@ interface BirthdayViewProps {
 }
 
 type Stage = 'countdown' | 'cake' | 'unwrap' | 'letter';
-
-const SUNFLOWER_LYRICS = [
-  { time: 0, text: "🎵 Sunflower - Post Malone & Swae Lee 🎵" },
-  { time: 1.5, text: "Needless to say, I keep her in check" },
-  { time: 4.8, text: "She was a bad-bad, nevertheless" },
-  { time: 8.0, text: "Callin' it quits now, baby, I'm a wreck" },
-  { time: 11.0, text: "Crash at my place, baby, you're a wreck" },
-  { time: 14.5, text: "Needless to say, I'm keeping in check" },
-  { time: 17.5, text: "She was a bad-bad, nevertheless" },
-  { time: 20.8, text: "Callin' it quits now, baby, I'm a wreck" },
-  { time: 24.0, text: "Crash at my place, baby, you're a wreck" },
-  { time: 27.2, text: "Thinking in a bad way, losing your grip" },
-  { time: 30.5, text: "Screaming at my face, baby, don't trip" },
-  { time: 33.8, text: "Someone took a big L, don't know how that felt" },
-  { time: 37.0, text: "Looking at you sideways, party on tilt" },
-  { time: 40.5, text: "Ooh-ooh, some things you just can't refuse" },
-  { time: 46.5, text: "She wanna ride me like a cruise and I'm not tryna lose" },
-  { time: 52.8, text: "Then you're left in the dust, unless I stuck by ya" },
-  { time: 59.8, text: "You're a sunflower, I think your love would be too much" },
-  { time: 66.2, text: "Or you'll be left in the dust, unless I stuck by ya" },
-  { time: 72.8, text: "You're the sunflower, you're the sunflower" },
-  { time: 79.5, text: "Every time I'm leaving on you, you don't make it easy, no, no" },
-  { time: 86.2, text: "Wish I could be there for you, give me a reason to, oh" },
-  { time: 93.0, text: "Go on, go on, let me get you on the phone" },
-  { time: 96.5, text: "We can talk about it, baby, write it down in stone" },
-  { time: 99.8, text: "Let me let you go, let me let you slide" },
-  { time: 103.2, text: "Never let you down, never leave your side" },
-  { time: 106.5, text: "Know you want it all, know you want it now" },
-  { time: 109.8, text: "Tell me when to go, tell me when to bounce" },
-  { time: 113.0, text: "Ooh-ooh, some things you just can't refuse" },
-  { time: 119.5, text: "She wanna ride me like a cruise and I'm not tryna lose" },
-  { time: 125.8, text: "Then you're left in the dust, unless I stuck by ya" },
-  { time: 132.8, text: "You're a sunflower, I think your love would be too much" },
-  { time: 139.2, text: "Or you'll be left in the dust, unless I stuck by ya" },
-  { time: 145.8, text: "You're the sunflower, you're the sunflower" }
-];
 
 // Shifting background gradients matching each page's photo theme
 const BG_GRADIENTS = [
@@ -72,19 +36,17 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
   const [micPermission, setMicPermission] = useState<boolean | null>(null);
   const [isLidOff, setIsLidOff] = useState(false);
   const [confetti, setConfetti] = useState<Array<{ id: number; x: number; color: string; delay: number; scale: number }>>([]);
-  const [isMuted, setIsMuted] = useState(false);
   const [bookPage, setBookPage] = useState(0); // 0 to 6
-  const [currentLyricIndex, setCurrentLyricIndex] = useState(0);
   const [proposalAnswer, setProposalAnswer] = useState('');
   const [isSendingProposal, setIsSendingProposal] = useState(false);
   const [proposalSent, setProposalSent] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const micStreamRef = useRef<MediaStream | null>(null);
   const animationFrameId = useRef<number | null>(null);
   const bgMusicRef = useRef<HTMLAudioElement | null>(null);
-  const lyricsContainerRef = useRef<HTMLDivElement | null>(null);
 
   // Check date lock or bypass via '?preview=true'
   useEffect(() => {
@@ -192,41 +154,11 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
     return () => stopMicBlowDetection();
   }, [stage]);
 
-  // Audio Sync for Lyrics
+  // Audio trigger
   useEffect(() => {
     if (stage === 'letter' && bgMusicRef.current) {
       bgMusicRef.current.volume = 0.45;
       bgMusicRef.current.play().catch((err) => console.log('Autoplay blocked:', err));
-
-      const handleTimeUpdate = () => {
-        if (!bgMusicRef.current) return;
-        const currentSeconds = bgMusicRef.current.currentTime;
-        
-        let matchingIndex = 0;
-        for (let i = 0; i < SUNFLOWER_LYRICS.length; i++) {
-          if (currentSeconds >= SUNFLOWER_LYRICS[i].time) {
-            matchingIndex = i;
-          } else {
-            break;
-          }
-        }
-        setCurrentLyricIndex(matchingIndex);
-
-        if (lyricsContainerRef.current) {
-          const activeEl = lyricsContainerRef.current.children[matchingIndex] as HTMLElement;
-          if (activeEl) {
-            lyricsContainerRef.current.scrollTo({
-              top: activeEl.offsetTop - lyricsContainerRef.current.clientHeight / 2 + activeEl.clientHeight / 2,
-              behavior: 'smooth'
-            });
-          }
-        }
-      };
-
-      bgMusicRef.current.addEventListener('timeupdate', handleTimeUpdate);
-      return () => {
-        bgMusicRef.current?.removeEventListener('timeupdate', handleTimeUpdate);
-      };
     }
   }, [stage]);
 
@@ -289,18 +221,17 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
     }
   ];
 
-  // Helper to map page index to 3D circular gallery rotation angles
-  // Page index mapping: Letter (page 0), Photos 1-5 (pages 1 to 5), Proposal (page 6)
+  // Snaps to 3D circular gallery rotation angles: 0deg, -72deg, -144deg, -216deg, -288deg
   const getGalleryRotation = () => {
     if (bookPage < 1) return 0;
-    if (bookPage > 5) return -288; // remain on last photo rotation
-    return -(bookPage - 1) * 72; // Snaps to 0deg, -72deg, -144deg, -216deg, -288deg
+    if (bookPage > 5) return -288;
+    return -(bookPage - 1) * 72;
   };
 
   return (
     <div 
       style={{ background: stage === 'letter' ? BG_GRADIENTS[bookPage] : undefined }}
-      className="min-h-screen w-full flex flex-col justify-start px-6 pb-26 relative overflow-y-auto select-none transition-all duration-1000 ease-in-out"
+      className="min-h-screen w-full flex flex-col justify-start px-4 pb-20 relative overflow-y-auto select-none transition-all duration-1000 ease-in-out"
     >
       {/* Background audio for Letter stage */}
       {stage === 'letter' && (
@@ -313,7 +244,7 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
           stopMicBlowDetection();
           onBack();
         }}
-        className="fixed top-0 left-4 sm:left-8 z-50 bg-[#800020] text-[#ffdada] px-4 py-2 hover:py-2.5 rounded-b-xl shadow-xl flex flex-row items-center gap-2 transition-all cursor-pointer border-x border-b border-[#ffb3b5]/30 group active:scale-95"
+        className="fixed top-0 left-4 z-50 bg-[#800020] text-[#ffdada] px-4 py-2 hover:py-2.5 rounded-b-xl shadow-xl flex flex-row items-center gap-2 transition-all cursor-pointer border-x border-b border-[#ffb3b5]/30 group active:scale-95"
       >
         <span className="text-xs group-hover:-translate-x-0.5 transition-transform">◀</span>
         <span className="text-xs font-semibold tracking-[0.2em] uppercase">
@@ -322,7 +253,7 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
       </button>
 
       {/* Primary Workspace */}
-      <main className="relative z-10 w-full max-w-6xl mx-auto flex flex-col items-center justify-center py-20 min-h-screen">
+      <main className="relative z-10 w-full max-w-lg mx-auto flex flex-col items-center justify-center py-16 min-h-screen">
         <AnimatePresence mode="wait">
           
           {/* STAGE 1: COUNTDOWN */}
@@ -333,18 +264,18 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.8 }}
-              className="w-full flex flex-col items-center gap-8 text-center max-w-2xl"
+              className="w-full flex flex-col items-center gap-8 text-center"
             >
               <div>
-                <h2 className="font-serif italic text-4xl sm:text-5xl text-[#ffb3b5] mb-2 drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)] animate-pulse">
+                <h2 className="font-serif italic text-4xl text-[#ffb3b5] mb-2 drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)] animate-pulse">
                   A Secret Gift
                 </h2>
-                <p className="font-sans text-xs sm:text-sm text-[#e0bfbf] max-w-md mx-auto leading-relaxed">
+                <p className="font-sans text-xs text-[#e0bfbf] max-w-md mx-auto leading-relaxed">
                   A beautiful birthday surprise is preparing for you...
                 </p>
               </div>
 
-              {/* Minimal Clean CSS Gift Box (Anti-AI-slop look) */}
+              {/* Minimal Clean CSS Gift Box */}
               <motion.div
                 animate={{
                   y: [0, -12, 0],
@@ -354,19 +285,17 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
                   ease: 'easeInOut',
                   repeat: Infinity,
                 }}
-                className="relative w-36 h-36 flex items-center justify-center"
+                className="relative w-32 h-32 flex items-center justify-center animate-pulse"
               >
-                {/* Clean Geometric Box Base */}
-                <div className="w-28 h-28 bg-[#800020] rounded-xl shadow-2xl relative border border-white/5 flex items-center justify-center">
-                  <div className="absolute inset-y-0 w-4 bg-[#ffd700]" />
-                  <div className="absolute inset-x-0 h-4 bg-[#ffd700]" />
-                  {/* Decorative minimalist golden ribbon knot */}
-                  <div className="absolute -top-3 w-8 h-8 rounded-full border-4 border-[#ffd700] bg-transparent" />
+                <div className="w-24 h-24 bg-[#800020] rounded-xl shadow-2xl relative border border-white/5 flex items-center justify-center">
+                  <div className="absolute inset-y-0 w-3 bg-[#ffd700]" />
+                  <div className="absolute inset-x-0 h-3 bg-[#ffd700]" />
+                  <div className="absolute -top-2.5 w-6 h-6 rounded-full border-4 border-[#ffd700] bg-transparent" />
                 </div>
               </motion.div>
 
               {/* Timer Grid */}
-              <div className="grid grid-cols-4 gap-3 sm:gap-4 max-w-md w-full px-2">
+              <div className="grid grid-cols-4 gap-2.5 w-full px-2">
                 {[
                   { label: 'Days', value: timeLeft.days },
                   { label: 'Hours', value: timeLeft.hours },
@@ -375,20 +304,20 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
                 ].map((item, index) => (
                   <div
                     key={index}
-                    className="glass-card-custom rounded-2xl py-4 flex flex-col items-center justify-center border border-[#ffb3b5]/15 shadow-xl bg-[#121414]/40"
+                    className="glass-card-custom rounded-2xl py-3 flex flex-col items-center justify-center border border-[#ffb3b5]/15 shadow-xl bg-[#121414]/40"
                   >
-                    <span className="font-serif text-3xl sm:text-4xl text-[#ffdada] font-semibold drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]">
+                    <span className="font-serif text-2xl text-[#ffdada] font-semibold drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]">
                       {String(item.value).padStart(2, '0')}
                     </span>
-                    <span className="text-[10px] sm:text-xs text-[#ffb3b5] uppercase tracking-wider mt-1.5 font-sans">
+                    <span className="text-[9px] text-[#ffb3b5] uppercase tracking-wider mt-1 font-sans">
                       {item.label}
                     </span>
                   </div>
                 ))}
               </div>
 
-              <div className="w-full glass-card-custom rounded-3xl p-6 sm:p-8 border border-[#ffb3b5]/10 max-w-lg shadow-2xl">
-                <p className="font-handwriting text-2xl sm:text-3xl text-white/90 leading-relaxed italic">
+              <div className="w-full glass-card-custom rounded-3xl p-6 border border-[#ffb3b5]/10 shadow-2xl">
+                <p className="font-handwriting text-2xl text-white/90 leading-relaxed italic">
                   "Patience, princess! No peeking until the clock strikes midnight on July 15th. 🤫✨"
                 </p>
               </div>
@@ -402,35 +331,31 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, y: -20 }}
-              className="w-full flex flex-col items-center text-center gap-6 max-w-2xl"
+              className="w-full flex flex-col items-center text-center gap-6"
             >
               <div>
-                <h2 className="font-serif italic text-4xl sm:text-5xl text-[#ffb3b5] mb-2 drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]">
+                <h2 className="font-serif italic text-4xl text-[#ffb3b5] mb-2 drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]">
                   Make a Wish! 🎂
                 </h2>
-                <p className="font-sans text-xs sm:text-sm text-[#ffdada]/70 max-w-md mx-auto">
+                <p className="font-sans text-xs text-[#ffdada]/70 max-w-md mx-auto">
                   {micPermission
                     ? 'Blow directly into your phone’s microphone to put out the candles!'
                     : 'Tap the candles to blow them out!'}
                 </p>
               </div>
 
-              {/* Minimal Clean CSS Cake (Anti-slop) */}
+              {/* Minimal Clean CSS Cake */}
               <div className="relative w-64 h-64 flex flex-col items-center justify-end pb-4">
-                {/* Plate stand */}
-                <div className="w-56 h-3 bg-white/10 rounded-full shadow-md mb-1" />
-
-                {/* Cake Tier */}
-                <div className="w-44 h-24 bg-gradient-to-t from-[#800020] to-[#b31942] rounded-t-2xl relative border-t border-white/10 shadow-xl flex justify-center items-start pt-4">
-                  {/* Decorative frosting line */}
-                  <div className="absolute top-8 left-0 right-0 h-1 bg-[#ffdada]/20" />
+                <div className="w-48 h-2 bg-white/10 rounded-full shadow-md mb-1" />
+                <div className="w-36 h-20 bg-gradient-to-t from-[#800020] to-[#b31942] rounded-t-2xl relative border-t border-white/10 shadow-xl flex justify-center items-start pt-4">
+                  <div className="absolute top-6 left-0 right-0 h-0.5 bg-[#ffdada]/20" />
                   
                   {/* Candle holders */}
-                  <div className="flex gap-8 -mt-10 z-20">
+                  <div className="flex gap-6 -mt-8 z-20">
                     {candlesLit.map((lit, i) => (
                       <div 
                         key={i} 
-                        className="relative w-3 h-10 bg-gradient-to-t from-pink-500 to-white rounded-t-sm shadow-sm cursor-pointer"
+                        className="relative w-2.5 h-8 bg-gradient-to-t from-pink-500 to-white rounded-t-sm shadow-sm cursor-pointer"
                         onClick={extinguishCandles}
                       >
                         {lit && (
@@ -440,7 +365,7 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
                               opacity: [0.9, 1, 0.85, 0.9],
                             }}
                             transition={{ duration: 1.2, repeat: Infinity }}
-                            className="absolute -top-5 left-1/2 transform -translate-x-1/2 w-4 h-5 bg-gradient-to-t from-orange-500 via-yellow-400 to-white rounded-full shadow-[0_0_8px_#ff7b00]"
+                            className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-3.5 h-4.5 bg-gradient-to-t from-orange-500 via-yellow-400 to-white rounded-full shadow-[0_0_8px_#ff7b00]"
                           />
                         )}
                       </div>
@@ -458,7 +383,7 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="w-full flex flex-col items-center text-center gap-8 max-w-2xl"
+              className="w-full flex flex-col items-center text-center gap-8"
             >
               {/* Confetti Rendering */}
               <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
@@ -489,15 +414,15 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
               </div>
 
               <div>
-                <h2 className="font-serif italic text-4xl sm:text-5xl text-[#ffb3b5] mb-2 drop-shadow-[0_2px_6px_rgba(0,0,0,0.5)]">
+                <h2 className="font-serif italic text-4xl text-[#ffb3b5] mb-2 drop-shadow-[0_2px_6px_rgba(0,0,0,0.5)]">
                   Your Gift is Ready!
                 </h2>
-                <p className="font-sans text-xs sm:text-sm text-[#ffdada]/70">
+                <p className="font-sans text-xs text-[#ffdada]/70">
                   Tap the glowing gift box to unwrap it
                 </p>
               </div>
 
-              {/* Minimal CSS Gift Box interactive */}
+              {/* Minimal CSS Gift Box */}
               <div 
                 className="relative w-64 h-64 flex items-center justify-center cursor-pointer group" 
                 onClick={() => {
@@ -510,11 +435,11 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
                 <motion.div
                   animate={isLidOff ? { y: -150, opacity: 0, scale: 0.8 } : { y: [0, -10, 0] }}
                   transition={isLidOff ? { duration: 1.2, ease: 'easeOut' } : { duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                  className="w-32 h-32 bg-[#800020] rounded-xl shadow-2xl relative border border-white/5 flex items-center justify-center"
+                  className="w-28 h-28 bg-[#800020] rounded-xl shadow-2xl relative border border-white/5 flex items-center justify-center"
                 >
-                  <div className="absolute inset-y-0 w-3 bg-[#ffd700]" />
-                  <div className="absolute inset-x-0 h-3 bg-[#ffd700]" />
-                  <div className="absolute -top-3 w-8 h-8 rounded-full border-4 border-[#ffd700] bg-transparent" />
+                  <div className="absolute inset-y-0 w-2.5 bg-[#ffd700]" />
+                  <div className="absolute inset-x-0 h-2.5 bg-[#ffd700]" />
+                  <div className="absolute -top-2.5 w-6 h-6 rounded-full border-4 border-[#ffd700] bg-transparent" />
                 </motion.div>
 
                 {isLidOff && (
@@ -531,21 +456,22 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
             </motion.div>
           )}
 
-          {/* STAGE 4: Synced Lyrics (Left) & Shifting Book Card (Right) */}
+          {/* STAGE 4: ENLARGED PRESENTATION (Lyrics Removed, Mobile Centered) */}
           {stage === 'letter' && (
             <motion.div
               key="letter-stage"
-              initial={{ opacity: 0, y: 40 }}
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1.2, ease: 'easeOut' }}
+              transition={{ duration: 1.0, ease: 'easeOut' }}
               className="w-full flex flex-col items-center gap-6"
             >
               {/* Header bar controls */}
-              <div className="w-full flex justify-between items-center px-2">
+              <div className="w-full flex justify-between items-center px-1">
                 <div className="text-xs uppercase tracking-widest text-[#ffdada]/60 font-sans">
                   Step {bookPage + 1} of 7
                 </div>
 
+                {/* Music volume toggle */}
                 <button
                   onClick={() => {
                     if (bgMusicRef.current) {
@@ -553,187 +479,147 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
                       setIsMuted(!isMuted);
                     }
                   }}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full glass-card-custom border border-[#ffb3b5]/20 text-xs text-[#ffb3b5] hover:bg-[#800020]/25 transition-all active:scale-95 cursor-pointer"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-full glass-card-custom border border-[#ffb3b5]/20 text-xs text-[#ffb3b5] active:scale-95 cursor-pointer"
                 >
                   {isMuted ? <VolumeX size={12} /> : <Volume2 size={12} />}
-                  <span>{isMuted ? 'Muted' : 'Sunflower playing 🌻'}</span>
+                  <span>{isMuted ? 'Muted' : 'Music playing 🌻'}</span>
                 </button>
               </div>
 
-              {/* Layout splits into Spotify Lyrics (Left) and Book Page (Right) */}
-              <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
+              {/* Main Content card: Single column, enlarged view */}
+              <div className="w-full glass-card-custom rounded-3xl p-6 border border-white/10 bg-black/40 backdrop-blur-md shadow-2xl flex flex-col h-[70vh] justify-between relative overflow-hidden">
                 
-                {/* LEFT SIDE: Spotify/Apple Music Synced Lyrics Panel */}
-                <div className="glass-card-custom rounded-3xl p-6 sm:p-8 border border-white/10 bg-black/50 backdrop-blur-2xl shadow-2xl flex flex-col h-[65vh] relative overflow-hidden select-none">
-                  <div 
-                    ref={lyricsContainerRef}
-                    className="flex-1 overflow-y-auto pr-2 space-y-6 flex flex-col scrollbar-none relative py-[20vh]"
-                  >
-                    {SUNFLOWER_LYRICS.map((line, idx) => {
-                      const isActive = idx === currentLyricIndex;
-                      const isPast = idx < currentLyricIndex;
+                {/* Page Content viewport */}
+                <div className="flex-1 overflow-y-auto pr-1 scrollbar-custom flex flex-col justify-center">
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={bookPage}
+                      initial={{ opacity: 0, scale: 0.96 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.96 }}
+                      transition={{ duration: 0.4 }}
+                      className="h-full flex flex-col justify-center"
+                    >
                       
-                      return (
-                        <motion.div
-                          key={idx}
-                          animate={{
-                            opacity: isActive ? 1.0 : isPast ? 0.45 : 0.2,
-                            scale: isActive ? 1.04 : 1.0,
-                            textShadow: isActive ? '0 0 16px rgba(255,255,255,0.7)' : 'none',
-                          }}
-                          transition={{ duration: 0.4 }}
-                          className={`text-lg sm:text-xl font-bold font-sans tracking-wide transition-colors leading-relaxed cursor-pointer ${
-                            isActive ? 'text-white' : 'text-white/60'
-                          }`}
-                          onClick={() => {
-                            if (bgMusicRef.current) {
-                              bgMusicRef.current.currentTime = line.time;
-                              setCurrentLyricIndex(idx);
-                            }
-                          }}
-                        >
-                          {line.text}
-                        </motion.div>
-                      );
-                    })}
-                  </div>
+                      {/* PAGE 1: THE LETTER */}
+                      {bookPage === 0 && (
+                        <div className="flex flex-col gap-4 text-[#ffdada]/95 py-2">
+                          <h3 className="font-serif italic text-2xl sm:text-3xl text-[#ffb3b5] border-b border-white/10 pb-2.5 text-center">
+                            Happy Birthday, My Princess 🌹
+                          </h3>
+                          <p className="font-handwriting text-2xl leading-relaxed">
+                            Dearest Isha,
+                          </p>
+                          <p className="font-handwriting text-2xl leading-relaxed">
+                            Happy birthday to the most beautiful, loving, and amazing person in my world. From the moment you entered my life, you turned every simple corner of it into a magical sanctuary. Even in moments of distance, you are the whisper in the wind that brings me warmth.
+                          </p>
+                          <p className="font-handwriting text-2xl leading-relaxed">
+                            I built this secret garden just for you—a small space to remind you of how cherished, loved, and valued you are, every single second of the day. May this year bring you all the warmth, laughter, and stars that you deserve.
+                          </p>
+                          <p className="font-handwriting text-2xl leading-relaxed text-right mt-4 italic">
+                            Forever and always yours, ❤️
+                          </p>
+                        </div>
+                      )}
+
+                      {/* PHOTO PAGES 2-6: ENLARGED 3D CircularGallery */}
+                      {bookPage >= 1 && bookPage <= 5 && (
+                        <div className="relative w-full h-[48vh] flex flex-col items-center justify-center overflow-hidden">
+                          
+                          {/* Enlarged 3D Circular Gallery */}
+                          <div className="w-full h-full absolute inset-0 z-10 flex items-center justify-center">
+                            <CircularGallery 
+                              items={galleryItems} 
+                              radius={190} // Enlarged radius optimized for centered mobile view
+                              activeRotation={getGalleryRotation()}
+                            />
+                          </div>
+                          
+                          {/* Captions box */}
+                          <div className="absolute bottom-1 z-20 bg-black/60 backdrop-blur-md px-5 py-2 rounded-full border border-white/10 max-w-[85%]">
+                            <p className="font-handwriting text-2xl text-[#ffdadb] italic text-center">
+                              {bookPage === 1 && "Looking back at one of my favorite moments of you..."}
+                              {bookPage === 2 && "Every smile of yours prints a permanent light in my heart."}
+                              {bookPage === 3 && "Even in quiet spaces, your memory keeps me complete."}
+                              {bookPage === 4 && "You are my shelter, my peaceful sky, and my anchor."}
+                              {bookPage === 5 && "Thank you for being you, for every single second."}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* PAGE 7: THE PROPOSAL */}
+                      {bookPage === 6 && (
+                        <div className="flex flex-col justify-center h-full gap-4 text-center py-2">
+                          {!proposalSent ? (
+                            <>
+                              <h3 className="font-serif italic text-3xl text-[#ffb3b5]">
+                                Will this birthday girl be my Forever?
+                              </h3>
+                              <h4 className="font-serif italic text-3.5xl text-[#ffd700] animate-pulse">
+                                My Wife? 💍
+                              </h4>
+
+                              <div className="mt-2 flex flex-col gap-3.5">
+                                <textarea
+                                  value={proposalAnswer}
+                                  onChange={(e) => setProposalAnswer(e.target.value)}
+                                  disabled={isSendingProposal}
+                                  placeholder="Write your answer to my heart here..."
+                                  className="w-full h-24 bg-[#121414]/50 border border-white/10 rounded-2xl p-4 focus:ring-1 focus:ring-[#ffabf3]/50 focus:outline-none text-[#ffdada] font-handwriting text-xl resize-none"
+                                />
+                                
+                                <button
+                                  onClick={sendProposalAnswer}
+                                  disabled={!proposalAnswer.trim() || isSendingProposal}
+                                  className="w-full bg-gradient-to-r from-[#800020] to-[#a41031] text-[#ffdada] hover:scale-102 active:scale-98 transition-all font-semibold uppercase tracking-wider py-3 rounded-full flex items-center justify-center gap-2 cursor-pointer shadow-lg disabled:opacity-40"
+                                >
+                                  <span>{isSendingProposal ? 'Sending Response...' : 'Send My Answer'}</span>
+                                  <Send size={12} />
+                                </button>
+                              </div>
+                            </>
+                          ) : (
+                            <motion.div
+                              initial={{ scale: 0.9, opacity: 0 }}
+                              animate={{ scale: 1, opacity: 1 }}
+                              className="flex flex-col items-center gap-4 text-center"
+                            >
+                              <span className="text-5xl animate-bounce">💖</span>
+                              <h3 className="font-serif italic text-2xl text-[#ffb3b5]">Answer Dispatched</h3>
+                              <p className="font-handwriting text-2xl text-white/95 leading-relaxed max-w-xs">
+                                "Your response has been securely sent directly to my inbox. I love you."
+                              </p>
+                            </motion.div>
+                          )}
+                        </div>
+                      )}
+
+                    </motion.div>
+                  </AnimatePresence>
                 </div>
 
-                {/* RIGHT SIDE: Interactive Presentation Card (Book Pages) */}
-                <div className="glass-card-custom rounded-3xl p-8 sm:p-10 border border-white/10 bg-black/35 backdrop-blur-md shadow-2xl flex flex-col h-[65vh] justify-between relative overflow-hidden">
-                  
-                  {/* Page transition stage */}
-                  <div className="flex-1 overflow-y-auto pr-1 scrollbar-custom flex flex-col justify-center">
-                    <AnimatePresence mode="wait">
-                      <motion.div
-                        key={bookPage}
-                        initial={{ opacity: 0, x: 25 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -25 }}
-                        transition={{ duration: 0.4 }}
-                        className="h-full flex flex-col justify-center"
-                      >
-                        
-                        {/* PAGE 1: THE LETTER */}
-                        {bookPage === 0 && (
-                          <div className="flex flex-col gap-5 text-[#ffdada]/95 py-4">
-                            <h3 className="font-serif italic text-3xl text-[#ffb3b5] border-b border-white/10 pb-3">
-                              Happy Birthday, My Princess 🌹
-                            </h3>
-                            <p className="font-handwriting text-2.5xl leading-loose">
-                              Dearest Isha,
-                            </p>
-                            <p className="font-handwriting text-2.5xl leading-loose">
-                              Happy birthday to the most beautiful, loving, and amazing person in my world. From the moment you entered my life, you turned every simple corner of it into a magical sanctuary. Even in moments of distance, you are the whisper in the wind that brings me warmth.
-                            </p>
-                            <p className="font-handwriting text-2.5xl leading-loose">
-                              I built this secret garden just for you—a small space to remind you of how cherished, loved, and valued you are, every single second of the day. May this year bring you all the warmth, laughter, and stars that you deserve.
-                            </p>
-                            <p className="font-handwriting text-2.5xl leading-loose text-right mt-6 italic">
-                              Forever and always yours, ❤️
-                            </p>
-                          </div>
-                        )}
+                {/* Page-turn Navigation */}
+                <div className="flex justify-between items-center border-t border-white/10 pt-4 mt-2">
+                  <button
+                    onClick={() => setBookPage((prev) => Math.max(0, prev - 1))}
+                    disabled={bookPage === 0}
+                    className="p-2 rounded-full border border-white/10 text-[#ffb3b5] hover:bg-[#800020]/25 transition-all disabled:opacity-30 cursor-pointer"
+                  >
+                    <ArrowLeft size={16} />
+                  </button>
 
-                        {/* PHOTO PAGES 2-6: CircularGallery Viewport */}
-                        {bookPage >= 1 && bookPage <= 5 && (
-                          <div className="relative w-full h-[45vh] flex flex-col items-center justify-center overflow-hidden">
-                            {/* Circular Gallery Container */}
-                            <div className="w-full h-full absolute inset-0 z-10 flex items-center justify-center">
-                              <CircularGallery 
-                                items={galleryItems} 
-                                radius={150} // Optimized radius to fit on card right side
-                                activeRotation={getGalleryRotation()}
-                              />
-                            </div>
-                            
-                            {/* Subtle caption overlay card */}
-                            <div className="absolute bottom-2 z-20 bg-black/70 backdrop-blur-md px-6 py-2.5 rounded-full border border-white/10">
-                              <p className="font-handwriting text-2xl text-[#ffdadb] italic text-center">
-                                {bookPage === 1 && "Looking back at one of my favorite moments of you..."}
-                                {bookPage === 2 && "Every smile of yours prints a permanent light in my heart."}
-                                {bookPage === 3 && "Even in quiet spaces, your memory keeps me complete."}
-                                {bookPage === 4 && "You are my shelter, my peaceful sky, and my anchor."}
-                                {bookPage === 5 && "Thank you for being you, for every single second."}
-                              </p>
-                            </div>
-                          </div>
-                        )}
+                  <span className="text-[10px] font-semibold text-[#ffdada]/60 font-sans tracking-wide">
+                    {bookPage === 0 ? 'Start reading 📖' : bookPage === 6 ? 'The final step 💍' : 'Slide for more Memories'}
+                  </span>
 
-                        {/* PAGE 7: THE PROPOSAL & EMAILJS RESPONSE */}
-                        {bookPage === 6 && (
-                          <div className="flex flex-col justify-center h-full gap-5 text-center py-4">
-                            {!proposalSent ? (
-                              <>
-                                <h3 className="font-serif italic text-3.5xl text-[#ffb3b5] drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]">
-                                  Will this birthday girl be my Forever?
-                                </h3>
-                                <h4 className="font-serif italic text-4xl text-[#ffd700] drop-shadow-[0_0_12px_rgba(255,215,0,0.35)] animate-pulse">
-                                  My Wife? 💍
-                                </h4>
-
-                                <div className="mt-4 flex flex-col gap-4">
-                                  <textarea
-                                    value={proposalAnswer}
-                                    onChange={(e) => setProposalAnswer(e.target.value)}
-                                    disabled={isSendingProposal}
-                                    placeholder="Write your answer to my heart here..."
-                                    className="w-full h-28 bg-[#121414]/50 border border-white/10 rounded-2xl p-4 focus:ring-1 focus:ring-[#ffabf3]/50 focus:outline-none text-[#ffdada] font-handwriting text-xl sm:text-2xl resize-none"
-                                  />
-                                  
-                                  <button
-                                    onClick={sendProposalAnswer}
-                                    disabled={!proposalAnswer.trim() || isSendingProposal}
-                                    className="w-full bg-gradient-to-r from-[#800020] to-[#a41031] text-[#ffdada] hover:scale-102 active:scale-98 transition-all font-semibold uppercase tracking-wider py-3.5 rounded-full flex items-center justify-center gap-2 cursor-pointer shadow-lg disabled:opacity-40 disabled:cursor-default"
-                                  >
-                                    <span>{isSendingProposal ? 'Sending Response...' : 'Send My Answer'}</span>
-                                    <Send size={12} />
-                                  </button>
-                                </div>
-                              </>
-                            ) : (
-                              <motion.div
-                                initial={{ scale: 0.9, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                className="flex flex-col items-center gap-4 text-center"
-                              >
-                                <span className="text-6xl filter drop-shadow-lg animate-bounce">💖</span>
-                                <h3 className="font-serif italic text-3xl text-[#ffb3b5]">Answer Dispatched</h3>
-                                <p className="font-handwriting text-2.5xl text-white/90 leading-relaxed max-w-sm">
-                                  "Your response took flight and has been securely sent directly to my inbox. I love you."
-                                </p>
-                              </motion.div>
-                            )}
-                          </div>
-                        )}
-
-                      </motion.div>
-                    </AnimatePresence>
-                  </div>
-
-                  {/* Page-turn Navigation */}
-                  <div className="flex justify-between items-center border-t border-white/10 pt-5 mt-4">
-                    <button
-                      onClick={() => setBookPage((prev) => Math.max(0, prev - 1))}
-                      disabled={bookPage === 0}
-                      className="p-2 rounded-full border border-white/10 text-[#ffb3b5] hover:bg-[#800020]/25 transition-all disabled:opacity-30 disabled:cursor-default cursor-pointer"
-                    >
-                      <ArrowLeft size={16} />
-                    </button>
-
-                    <span className="text-[11px] font-semibold text-[#ffdada]/60 font-sans tracking-wide">
-                      {bookPage === 0 ? 'Start reading 📖' : bookPage === 6 ? 'The final step 💍' : 'Slide for more Memories'}
-                    </span>
-
-                    <button
-                      onClick={() => setBookPage((prev) => Math.min(6, prev + 1))}
-                      disabled={bookPage === 6}
-                      className="p-2 rounded-full border border-white/10 text-[#ffb3b5] hover:bg-[#800020]/25 transition-all disabled:opacity-30 disabled:cursor-default cursor-pointer"
-                    >
-                      <ArrowRight size={16} />
-                    </button>
-                  </div>
-
+                  <button
+                    onClick={() => setBookPage((prev) => Math.min(6, prev + 1))}
+                    disabled={bookPage === 6}
+                    className="p-2 rounded-full border border-white/10 text-[#ffb3b5] hover:bg-[#800020]/25 transition-all disabled:opacity-30 cursor-pointer"
+                  >
+                    <ArrowRight size={16} />
+                  </button>
                 </div>
 
               </div>
