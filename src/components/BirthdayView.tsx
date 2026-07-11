@@ -3,24 +3,21 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Volume2, VolumeX, Send } from 'lucide-react';
 import { CircularGallery, GalleryItem } from './ui/circular-gallery';
 import { ReadingTextReveal } from './ui/reading-text-reveal';
+import { VaporTextEffect } from './ui/vapor-text-effect';
 
 import sunflowerMp3 from '../assets/Post_Malone_Swae_Lee_-_Sunflower_Spider-Man_Into_The_Spider-Verse_(mp3.pm).mp3';
 
-// Import the 8 memory photos
+// Import the 4 memory photos (Reduced to 4 slots)
 import photo1 from '../assets/WhatsApp Image 2026-05-25 at 20.06.30 (1).jpeg';
 import photo2 from '../assets/WhatsApp Image 2026-05-25 at 20.06.31.jpeg';
 import photo3 from '../assets/WhatsApp Image 2026-05-25 at 20.06.34.jpeg';
 import photo4 from '../assets/WhatsApp Image 2026-05-25 at 20.06.37.jpeg';
-import photo5 from '../assets/WhatsApp Image 2026-05-25 at 20.06.39.jpeg';
-import photo6 from '../assets/IMG-20260609-WA0092.jpg';
-import photo7 from '../assets/IMG-20260609-WA0093.jpg';
-import photo8 from '../assets/IMG-20260609-WA0094.jpg';
 
 interface BirthdayViewProps {
   onBack: () => void;
 }
 
-type Stage = 'countdown' | 'cake' | 'unwrap' | 'letter';
+type Stage = 'countdown' | 'cake' | 'unwrap' | 'vapor' | 'letter';
 
 const STORY_SEGMENTS = [
   "Dearest Isha, Happy birthday to the most beautiful, loving, and amazing person in my world.",
@@ -30,6 +27,7 @@ const STORY_SEGMENTS = [
   "Forever and always yours, ❤️"
 ];
 
+// Background gradients for each section
 const BACKGROUNDS = {
   black: '#000000',
   gallery: 'linear-gradient(135deg, #11071d 0%, #04010a 100%)',
@@ -106,9 +104,7 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
       audioContextRef.current = audioContext;
 
       const source = audioContext.createMediaStreamSource(stream);
-      const analyser = audioContext.createAnalyser();
-      analyser.fftSize = 256;
-      source.connect(analyser);
+      const analyser = reportMicInput(audioContext, stream);
       analyserRef.current = analyser;
 
       const bufferLength = analyser.frequencyBinCount;
@@ -135,6 +131,15 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
     } catch (err) {
       setMicPermission(false);
     }
+  };
+
+  // Helper method to setup analyser
+  const reportMicInput = (audioContext: AudioContext, stream: MediaStream) => {
+    const source = audioContext.createMediaStreamSource(stream);
+    const analyser = audioContext.createAnalyser();
+    analyser.fftSize = 256;
+    source.connect(analyser);
+    return analyser;
   };
 
   const stopMicBlowDetection = () => {
@@ -199,7 +204,7 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
     }
   };
 
-  // Gallery items for the 8 photo gallery slots
+  // Gallery items for the 4 photo slots (Reduced from 8)
   const galleryItems: GalleryItem[] = [
     {
       common: 'Our Beginning',
@@ -220,26 +225,6 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
       common: 'Together Always',
       binomial: 'Photo 4',
       photo: { url: photo4, text: 'Memory photo 4', pos: 'center', by: 'Us' }
-    },
-    {
-      common: 'My Favorite Smile',
-      binomial: 'Photo 5',
-      photo: { url: photo5, text: 'Memory photo 5', pos: 'center', by: 'Us' }
-    },
-    {
-      common: 'Sweet Moments',
-      binomial: 'Photo 6',
-      photo: { url: photo6, text: 'Memory photo 6', pos: 'center', by: 'Us' }
-    },
-    {
-      common: 'Radiant Light',
-      binomial: 'Photo 7',
-      photo: { url: photo7, text: 'Memory photo 7', pos: 'center', by: 'Us' }
-    },
-    {
-      common: 'Cherished Memories',
-      binomial: 'Photo 8',
-      photo: { url: photo8, text: 'Memory photo 8', pos: 'center', by: 'Us' }
     }
   ];
 
@@ -268,7 +253,7 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
       </button>
 
       {/* Primary Workspace */}
-      <main className="relative z-10 w-full max-w-2xl mx-auto flex flex-col items-center justify-center min-h-screen">
+      <main className="relative z-10 w-full max-w-lg mx-auto flex flex-col items-center justify-center min-h-screen">
         <AnimatePresence mode="wait">
           
           {/* STAGE 1: COUNTDOWN */}
@@ -443,7 +428,7 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
                 onClick={() => {
                   setIsLidOff(true);
                   setTimeout(() => {
-                    setStage('letter');
+                    setStage('vapor');
                   }, 1600);
                 }}
               >
@@ -471,7 +456,12 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
             </motion.div>
           )}
 
-          {/* STAGE 4: SCROLL STORYTELLING */}
+          {/* STAGE 3.5: VAPOR TEXT EFFECT (18 -> 19 Particle Disintegration) */}
+          {stage === 'vapor' && (
+            <VaporTextEffect onComplete={() => setStage('letter')} />
+          )}
+
+          {/* STAGE 4: ONE PAGE VERTICALLY SCROLLABLE PRESENTATION */}
           {stage === 'letter' && (
             <motion.div
               key="letter-stage"
@@ -515,7 +505,7 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
                 <ReadingTextReveal storySegments={STORY_SEGMENTS} />
               </motion.div>
 
-              {/* SECTION 2: ENLARGED 3D CIRCULAR GALLERY (Transitions to Shifting Ambient Color) */}
+              {/* SECTION 2: ENLARGED 3D CIRCULAR GALLERY (4 slots) */}
               <motion.div
                 initial={{ opacity: 0 }}
                 whileInView={{ opacity: 1 }}
@@ -526,7 +516,7 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
                 <div className="w-full h-full absolute inset-0 z-10 flex items-center justify-center">
                   <CircularGallery 
                     items={galleryItems} 
-                    radius={220} // Enlarged radius for borderless float layout
+                    radius={200} // Optimal radius to display nicely on mobile width
                   />
                 </div>
                 
@@ -581,8 +571,8 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
                     className="flex flex-col items-center gap-4 py-6 max-w-sm mx-auto"
                   >
                     <span className="text-6xl animate-bounce">💖</span>
-                    <h3 className="font-serif italic text-3.5xl text-[#ffb3b5]">Answer Dispatched</h3>
-                    <p className="font-handwriting text-2.5xl text-white/95 leading-relaxed">
+                    <h3 className="font-serif italic text-2xl text-[#ffb3b5]">Answer Dispatched</h3>
+                    <p className="font-handwriting text-2xl text-white/95 leading-relaxed">
                       "Your response has been securely sent directly to my inbox. I love you."
                     </p>
                   </motion.div>
