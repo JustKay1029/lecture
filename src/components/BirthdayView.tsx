@@ -220,9 +220,9 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
   // Starts true black at the top, fades to warm lovely cream/peach in the middle/proposal sections.
   const getBackgroundStyle = () => {
     if (stage !== 'letter') return '#000000';
-    // Smooth transition trigger threshold
+    // Smooth transition to dark ambient purple
     if (scrollY > 1200) {
-      return 'linear-gradient(to bottom, #fdfbf7 0%, #fff0e5 100%)';
+      return 'linear-gradient(135deg, #11071d 0%, #04010a 100%)';
     }
     return '#000000';
   };
@@ -567,16 +567,10 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
               <div className="w-full flex flex-col justify-center min-h-[70vh] text-center px-4 relative z-10">
                 {!proposalSent ? (
                   <div 
-                    className="flex flex-col gap-5 py-6 max-w-md mx-auto w-full rounded-3xl p-6 sm:p-8 transition-colors duration-1000"
-                    style={{
-                      backgroundColor: scrollY > 1200 ? 'rgba(74, 28, 34, 0.05)' : 'rgba(0, 0, 0, 0.45)',
-                      border: '1px border rgba(255, 255, 255, 0.05)'
-                    }}
+                    className="flex flex-col gap-5 py-6 max-w-md mx-auto w-full rounded-3xl p-6 sm:p-8 bg-black/45 border border-white/5 shadow-2xl"
                   >
-                    {/* proposal heading transitions to burgundy text if background goes light cream */}
                     <h3 
-                      className="font-serif italic text-3xl sm:text-4xl transition-colors duration-1000"
-                      style={{ color: scrollY > 1200 ? '#4a1c22' : '#ffb3b5' }}
+                      className="font-serif italic text-3xl sm:text-4xl text-[#ffb3b5]"
                     >
                       Will this birthday girl be my Forever?
                     </h3>
