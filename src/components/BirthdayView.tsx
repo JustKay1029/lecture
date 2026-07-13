@@ -1,17 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Volume2, VolumeX, Send } from 'lucide-react';
-import { CircularGallery, GalleryItem } from './ui/circular-gallery';
 import { ReadingTextReveal } from './ui/reading-text-reveal';
 import { VaporTextEffect } from './ui/vapor-text-effect';
 
-import sunflowerMp3 from '../assets/Post_Malone_Swae_Lee_-_Sunflower_Spider-Man_Into_The_Spider-Verse_(mp3.pm).mp3';
+import valleysMp3 from '../assets/WOAH_-_Valleys_(mp3.pm).mp3';
 
-// Import the 4 memory photos (Reduced to 4 slots)
+// Import the 8 memory photos for customizable slots
 import photo1 from '../assets/WhatsApp Image 2026-05-25 at 20.06.30 (1).jpeg';
 import photo2 from '../assets/WhatsApp Image 2026-05-25 at 20.06.31.jpeg';
 import photo3 from '../assets/WhatsApp Image 2026-05-25 at 20.06.34.jpeg';
 import photo4 from '../assets/WhatsApp Image 2026-05-25 at 20.06.37.jpeg';
+import photo5 from '../assets/WhatsApp Image 2026-05-25 at 20.06.39.jpeg';
+import photo6 from '../assets/IMG-20260609-WA0092.jpg';
+import photo7 from '../assets/IMG-20260609-WA0093.jpg';
+import photo8 from '../assets/IMG-20260609-WA0094.jpg';
 
 interface BirthdayViewProps {
   onBack: () => void;
@@ -27,12 +30,18 @@ const STORY_SEGMENTS = [
   "Forever and always yours, ❤️"
 ];
 
-// Background gradients for each section
-const BACKGROUNDS = {
-  black: '#000000',
-  gallery: 'linear-gradient(135deg, #11071d 0%, #04010a 100%)',
-  proposal: 'linear-gradient(135deg, #030e1c 0%, #00040a 100%)'
-};
+// EASY-TO-EDIT Photo Configuration list for background floating images.
+// You can edit, add, or sequence as many photos as you want!
+const MEMORY_PHOTOS = [
+  { id: 1, url: photo1, shape: 'circle', x: '10%', y: 800, size: 100 },
+  { id: 2, url: photo2, shape: 'heart', x: '75%', y: 1300, size: 110 },
+  { id: 3, url: photo3, shape: 'rounded', x: '12%', y: 1900, size: 115 },
+  { id: 4, url: photo4, shape: 'circle', x: '78%', y: 2500, size: 100 },
+  { id: 5, url: photo5, shape: 'rounded', x: '8%', y: 3100, size: 110 },
+  { id: 6, url: photo6, shape: 'heart', x: '72%', y: 3700, size: 105 },
+  { id: 7, url: photo7, shape: 'circle', x: '15%', y: 4300, size: 95 },
+  { id: 8, url: photo8, shape: 'rounded', x: '76%', y: 4900, size: 120 }
+];
 
 export default function BirthdayView({ onBack }: BirthdayViewProps) {
   const [stage, setStage] = useState<Stage>('countdown');
@@ -42,7 +51,7 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
   const [isLidOff, setIsLidOff] = useState(false);
   const [confetti, setConfetti] = useState<Array<{ id: number; x: number; color: string; delay: number; scale: number }>>([]);
   const [isMuted, setIsMuted] = useState(false);
-  const [currentBg, setCurrentBg] = useState(BACKGROUNDS.black);
+  const [scrollY, setScrollY] = useState(0);
   const [proposalAnswer, setProposalAnswer] = useState('');
   const [isSendingProposal, setIsSendingProposal] = useState(false);
   const [proposalSent, setProposalSent] = useState(false);
@@ -79,6 +88,17 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
     return () => clearInterval(interval);
   }, []);
 
+  // Sync scroll position
+  useEffect(() => {
+    if (stage === 'letter') {
+      const handleScroll = () => {
+        setScrollY(window.scrollY);
+      };
+      window.addEventListener('scroll', handleScroll, { passive: true });
+      return () => window.removeEventListener('scroll', handleScroll);
+    }
+  }, [stage]);
+
   // Generate Confetti particles
   const triggerConfetti = () => {
     const colors = ['#ffabf3', '#ffdada', '#ffb3b5', '#ffd700', '#ff69b4', '#800020'];
@@ -104,7 +124,9 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
       audioContextRef.current = audioContext;
 
       const source = audioContext.createMediaStreamSource(stream);
-      const analyser = reportMicInput(audioContext, stream);
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 256;
+      source.connect(analyser);
       analyserRef.current = analyser;
 
       const bufferLength = analyser.frequencyBinCount;
@@ -133,15 +155,6 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
     }
   };
 
-  // Helper method to setup analyser
-  const reportMicInput = (audioContext: AudioContext, stream: MediaStream) => {
-    const source = audioContext.createMediaStreamSource(stream);
-    const analyser = audioContext.createAnalyser();
-    analyser.fftSize = 256;
-    source.connect(analyser);
-    return analyser;
-  };
-
   const stopMicBlowDetection = () => {
     if (animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
     if (micStreamRef.current) {
@@ -154,6 +167,13 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
     setCandlesLit([false, false, false]);
     stopMicBlowDetection();
     triggerConfetti();
+
+    // Start playing background music immediately when candles are blown out!
+    if (bgMusicRef.current) {
+      bgMusicRef.current.volume = 0.45;
+      bgMusicRef.current.play().catch((err) => console.log('Audio autoplay blocked:', err));
+    }
+
     setTimeout(() => {
       setStage('unwrap');
     }, 2000);
@@ -164,14 +184,6 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
       startMicBlowDetection();
     }
     return () => stopMicBlowDetection();
-  }, [stage]);
-
-  // Audio trigger
-  useEffect(() => {
-    if (stage === 'letter' && bgMusicRef.current) {
-      bgMusicRef.current.volume = 0.45;
-      bgMusicRef.current.play().catch((err) => console.log('Autoplay blocked:', err));
-    }
   }, [stage]);
 
   // Send Proposal Response via EmailJS
@@ -204,39 +216,24 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
     }
   };
 
-  // Gallery items for the 4 photo slots (Reduced from 8)
-  const galleryItems: GalleryItem[] = [
-    {
-      common: 'Our Beginning',
-      binomial: 'Photo 1',
-      photo: { url: photo1, text: 'Memory photo 1', pos: 'center', by: 'Us' }
-    },
-    {
-      common: 'Pure Joy',
-      binomial: 'Photo 2',
-      photo: { url: photo2, text: 'Memory photo 2', pos: 'center', by: 'Us' }
-    },
-    {
-      common: 'Quiet Warmth',
-      binomial: 'Photo 3',
-      photo: { url: photo3, text: 'Memory photo 3', pos: 'center', by: 'Us' }
-    },
-    {
-      common: 'Together Always',
-      binomial: 'Photo 4',
-      photo: { url: photo4, text: 'Memory photo 4', pos: 'center', by: 'Us' }
+  // Get current scroll-based background color style
+  // Starts true black at the top, fades to warm lovely cream/peach in the middle/proposal sections.
+  const getBackgroundStyle = () => {
+    if (stage !== 'letter') return '#000000';
+    // Smooth transition trigger threshold
+    if (scrollY > 1200) {
+      return 'linear-gradient(to bottom, #fdfbf7 0%, #fff0e5 100%)';
     }
-  ];
+    return '#000000';
+  };
 
   return (
     <div 
-      style={{ background: stage === 'letter' ? currentBg : '#000000' }}
+      style={{ background: getBackgroundStyle() }}
       className="min-h-screen w-full flex flex-col justify-start px-4 pb-20 relative overflow-y-auto select-none transition-all duration-1000 ease-in-out scroll-smooth"
     >
-      {/* Background audio for Letter stage */}
-      {stage === 'letter' && (
-        <audio ref={bgMusicRef} src={sunflowerMp3} loop />
-      )}
+      {/* Background audio tag */}
+      <audio ref={bgMusicRef} src={valleysMp3} loop />
 
       {/* Back Ribbon Tab */}
       <button
@@ -456,7 +453,7 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
             </motion.div>
           )}
 
-          {/* STAGE 3.5: VAPOR TEXT EFFECT (18 -> 19 Particle Disintegration) */}
+          {/* STAGE 3.5: VAPOR TEXT EFFECT */}
           {stage === 'vapor' && (
             <VaporTextEffect onComplete={() => setStage('letter')} />
           )}
@@ -467,10 +464,60 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
               key="letter-stage"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              className="w-full flex flex-col gap-24 py-10"
+              className="w-full flex flex-col gap-24 py-10 relative"
             >
+              {/* Dynamic Shifting Ambient Photos floating upwards behind text */}
+              <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden min-h-[400vh]">
+                {MEMORY_PHOTOS.map((photo) => {
+                  // Determine read vs unread state based on scroll coordinates
+                  const isRead = scrollY > photo.y - 280;
+                  
+                  return (
+                    <motion.div
+                      key={photo.id}
+                      animate={{
+                        y: [0, -10, 0],
+                        rotate: [0, 1.5, -1.5, 0],
+                      }}
+                      transition={{
+                        duration: 5 + (photo.id % 3) * 2,
+                        repeat: Infinity,
+                        ease: 'easeInOut'
+                      }}
+                      style={{
+                        position: 'absolute',
+                        left: photo.x,
+                        top: `${photo.y}px`,
+                        width: `${photo.size}px`,
+                        height: `${photo.size}px`,
+                        transition: 'filter 0.8s ease-out, opacity 0.8s ease-out',
+                        filter: isRead ? 'blur(4px)' : 'none',
+                        opacity: isRead ? 0.08 : 0.28,
+                      }}
+                    >
+                      {/* CSS Heart masking support */}
+                      <div 
+                        className={`w-full h-full border border-white/10 overflow-hidden shadow-2xl bg-black/10 backdrop-blur-sm ${
+                          photo.shape === 'circle' ? 'rounded-full' :
+                          photo.shape === 'rounded' ? 'rounded-2xl' : ''
+                        }`}
+                        style={{
+                          clipPath: photo.shape === 'heart' ? 'url(#heart-clip)' : undefined
+                        }}
+                      >
+                        <img src={photo.url} alt="Memory item" className="w-full h-full object-cover select-none" />
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+
               {/* Sticky Sound Volume Controller */}
-              <div className="sticky top-4 z-40 flex justify-end w-full pointer-events-auto">
+              <div className="sticky top-4 z-40 flex justify-between items-center w-full pointer-events-auto">
+                <span className="text-[10px] tracking-widest font-sans uppercase font-bold text-[#ffb3b5] bg-black/35 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/5">
+                  Happy Birthday, Isha
+                </span>
+                
                 <button
                   onClick={() => {
                     if (bgMusicRef.current) {
@@ -485,17 +532,13 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
                 </button>
               </div>
 
-              {/* SECTION 1: THE LOVE LETTER TEXT REVEAL (True Black background) */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                viewport={{ once: true, amount: 0.1 }}
-                onViewportEnter={() => setCurrentBg(BACKGROUNDS.black)}
-                className="w-full min-h-[120vh] flex flex-col justify-center py-20"
+              {/* SECTION 1: THE LOVE LETTER TEXT REVEAL */}
+              <div
+                className="w-full min-h-[120vh] flex flex-col justify-center py-20 relative z-10"
               >
                 <div className="text-center mb-16">
-                  <h3 className="font-serif italic text-3xl sm:text-4xl text-[#ffb3b5]">
-                    Happy Birthday, My Princess 🌹
+                  <h3 className="font-serif italic text-3xl sm:text-4xl text-[#ffb3b5] drop-shadow-md">
+                    To My Safe Place 🌹
                   </h3>
                   <p className="text-xs uppercase tracking-widest text-[#ffdada]/60 font-sans mt-2">
                     Scroll down slowly to read...
@@ -503,45 +546,41 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
                 </div>
 
                 <ReadingTextReveal storySegments={STORY_SEGMENTS} />
-              </motion.div>
+              </div>
 
-              {/* SECTION 2: ENLARGED 3D CIRCULAR GALLERY (4 slots) */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                viewport={{ once: true, amount: 0.1 }}
-                onViewportEnter={() => setCurrentBg(BACKGROUNDS.gallery)}
-                className="w-full h-[70vh] flex flex-col items-center justify-center overflow-hidden relative rounded-3xl"
-              >
-                <div className="w-full h-full absolute inset-0 z-10 flex items-center justify-center">
-                  <CircularGallery 
-                    items={galleryItems} 
-                    radius={200} // Optimal radius to display nicely on mobile width
-                  />
-                </div>
-                
-                {/* Visual scroll indicator */}
-                <div className="absolute bottom-2 z-20 bg-black/40 backdrop-blur-md px-5 py-2 rounded-full border border-white/10">
-                  <p className="font-sans text-xs text-[#ffdada]/70 text-center animate-pulse">
-                    Swipe or Scroll to spin the gallery 🪐
+              {/* SECTION 2: TRANSITION & FLOATING MEMORY LANE INTRO */}
+              <div className="min-h-[60vh] flex flex-col justify-center text-center px-4 relative z-10">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.3 }}
+                  className="max-w-md mx-auto"
+                >
+                  <h3 className="font-serif italic text-3xl text-[#ffb3b5] mb-4">Our Safe Haven</h3>
+                  <p className="font-sans text-sm text-[#ffdada]/80 leading-relaxed">
+                    A place so far away, where you are by my side, stress-free. Every memory floated above is a promise of the beautiful days waiting for us ahead. Let the stress melt away, my princess. ❤️
                   </p>
-                </div>
-              </motion.div>
+                </motion.div>
+              </div>
 
-              {/* SECTION 3: THE PROPOSAL & MESSAGE SENDER (Transitions to Cosmic Indigo) */}
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.1 }}
-                onViewportEnter={() => setCurrentBg(BACKGROUNDS.proposal)}
-                className="w-full flex flex-col justify-center min-h-[60vh] text-center px-4"
-              >
+              {/* SECTION 3: THE PROPOSAL & MESSAGE SENDER */}
+              <div className="w-full flex flex-col justify-center min-h-[70vh] text-center px-4 relative z-10">
                 {!proposalSent ? (
-                  <div className="flex flex-col gap-5 py-2 max-w-md mx-auto w-full">
-                    <h3 className="font-serif italic text-3xl sm:text-4xl text-[#ffb3b5]">
+                  <div 
+                    className="flex flex-col gap-5 py-6 max-w-md mx-auto w-full rounded-3xl p-6 sm:p-8 transition-colors duration-1000"
+                    style={{
+                      backgroundColor: scrollY > 1200 ? 'rgba(74, 28, 34, 0.05)' : 'rgba(0, 0, 0, 0.45)',
+                      border: '1px border rgba(255, 255, 255, 0.05)'
+                    }}
+                  >
+                    {/* proposal heading transitions to burgundy text if background goes light cream */}
+                    <h3 
+                      className="font-serif italic text-3xl sm:text-4xl transition-colors duration-1000"
+                      style={{ color: scrollY > 1200 ? '#4a1c22' : '#ffb3b5' }}
+                    >
                       Will this birthday girl be my Forever?
                     </h3>
-                    <h4 className="font-serif italic text-4xl sm:text-5.5xl text-[#ffd700] animate-pulse">
+                    <h4 className="font-serif italic text-4xl sm:text-5.5xl text-[#ffd700] animate-pulse drop-shadow-[0_0_10px_rgba(255,215,0,0.2)]">
                       My Wife? 💍
                     </h4>
 
@@ -571,19 +610,28 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
                     className="flex flex-col items-center gap-4 py-6 max-w-sm mx-auto"
                   >
                     <span className="text-6xl animate-bounce">💖</span>
-                    <h3 className="font-serif italic text-2xl text-[#ffb3b5]">Answer Dispatched</h3>
-                    <p className="font-handwriting text-2xl text-white/95 leading-relaxed">
+                    <h3 className="font-serif italic text-3.5xl text-[#ffb3b5]">Answer Dispatched</h3>
+                    <p className="font-handwriting text-2.5xl text-white/95 leading-relaxed">
                       "Your response has been securely sent directly to my inbox. I love you."
                     </p>
                   </motion.div>
                 )}
-              </motion.div>
+              </div>
 
             </motion.div>
           )}
 
         </AnimatePresence>
       </main>
+
+      {/* SVG Mask Definition for Heart-shaped Photos */}
+      <svg width="0" height="0" className="absolute">
+        <defs>
+          <clipPath id="heart-clip" clipPathUnits="objectBoundingBox">
+            <path d="M 0.5 0.232 C 0.444 0.082, 0.278 0.024, 0.139 0.134 C -0.014 0.254, -0.046 0.485, 0.111 0.697 C 0.241 0.871, 0.435 0.98, 0.5 1 C 0.565 0.98, 0.759 0.871, 0.889 0.697 C 1.046 0.485, 1.014 0.254, 0.861 0.134 C 0.722 0.024, 0.556 0.082, 0.5 0.232" />
+          </clipPath>
+        </defs>
+      </svg>
     </div>
   );
 }
