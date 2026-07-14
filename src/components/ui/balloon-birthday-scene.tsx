@@ -484,11 +484,26 @@ export const BalloonBirthdayScene = ({ onComplete }: BalloonBirthdaySceneProps) 
     };
     buildBubbles();
 
-    // 13. Interaction Raycasting for present box click
+    // 13. Interaction Raycasting for present box click (Touch & Mouse friendly)
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
+    let pointerStartX = 0;
+    let pointerStartY = 0;
 
-    const handlePointerDown = (e: MouseEvent) => {
+    const handlePointerDown = (e: PointerEvent) => {
+      pointerStartX = e.clientX;
+      pointerStartY = e.clientY;
+    };
+
+    const handlePointerUp = (e: PointerEvent) => {
+      // Differentiate tap from camera drag/orbit
+      const dx = e.clientX - pointerStartX;
+      const dy = e.clientY - pointerStartY;
+      const moveDistance = Math.sqrt(dx * dx + dy * dy);
+      
+      // If client dragged camera, ignore click
+      if (moveDistance > 8) return;
+
       // Calculate normalized mouse coords
       const rect = renderer.domElement.getBoundingClientRect();
       mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
@@ -522,7 +537,9 @@ export const BalloonBirthdayScene = ({ onComplete }: BalloonBirthdaySceneProps) 
         animateClick();
       }
     };
-    renderer.domElement.addEventListener('click', handlePointerDown);
+
+    renderer.domElement.addEventListener('pointerdown', handlePointerDown);
+    renderer.domElement.addEventListener('pointerup', handlePointerUp);
 
     // 14. Render loop
     let animId: number;
@@ -577,7 +594,8 @@ export const BalloonBirthdayScene = ({ onComplete }: BalloonBirthdaySceneProps) 
     // Cleanup
     return () => {
       cancelAnimationFrame(animId);
-      renderer.domElement.removeEventListener('click', handlePointerDown);
+      renderer.domElement.removeEventListener('pointerdown', handlePointerDown);
+      renderer.domElement.removeEventListener('pointerup', handlePointerUp);
       if (container.contains(renderer.domElement)) {
         container.removeChild(renderer.domElement);
       }
