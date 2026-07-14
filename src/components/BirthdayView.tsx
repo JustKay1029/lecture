@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Volume2, VolumeX, Send } from 'lucide-react';
 import { ReadingTextReveal } from './ui/reading-text-reveal';
 import { VaporTextEffect } from './ui/vapor-text-effect';
+import { BalloonBirthdayScene } from './ui/balloon-birthday-scene';
 
 import valleysMp3 from '../assets/WOAH_-_Valleys_(mp3.pm).mp3';
 
@@ -20,7 +21,7 @@ interface BirthdayViewProps {
   onBack: () => void;
 }
 
-type Stage = 'countdown' | 'cake' | 'unwrap' | 'vapor' | 'letter';
+type Stage = 'countdown' | 'cake' | 'unwrap' | 'vapor' | 'balloon-scene' | 'letter';
 
 const STORY_SEGMENTS = [
   "Dearest Isha, Happy birthday to the most beautiful, loving, and amazing person in my world.",
@@ -455,7 +456,12 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
 
           {/* STAGE 3.5: VAPOR TEXT EFFECT */}
           {stage === 'vapor' && (
-            <VaporTextEffect onComplete={() => setStage('letter')} />
+            <VaporTextEffect onComplete={() => setStage('balloon-scene')} />
+          )}
+
+          {/* STAGE 3.8: BALLOON BIRTHDAY SCENE */}
+          {stage === 'balloon-scene' && (
+            <BalloonBirthdayScene onComplete={() => setStage('letter')} />
           )}
 
           {/* STAGE 4: ONE PAGE VERTICALLY SCROLLABLE PRESENTATION */}
