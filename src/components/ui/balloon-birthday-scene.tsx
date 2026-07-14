@@ -9,29 +9,46 @@ interface BalloonBirthdaySceneProps {
 
 export const BalloonBirthdayScene = ({ onComplete }: BalloonBirthdaySceneProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [rotation, setRotation] = useState({ x: 0, y: 0 });
+  const [isLoaded, setIsLoaded] = useState(false);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  
   const targetRotation = useRef({ x: 0, y: 0 });
   const currentRotation = useRef({ x: 0, y: 0 });
-  const isDragging = useRef(false);
-  const dragStart = useRef({ x: 0, y: 0 });
 
-  // Load Fleur De Leah & DynaPuff (bubble font) from Google Fonts dynamically
+  // Load Three.js + OrbitControls dynamically
   useEffect(() => {
-    const link = document.createElement('link');
-    link.href = 'https://fonts.googleapis.com/css2?family=DynaPuff:wght@700&family=Fleur+De+Leah&display=swap';
-    link.rel = 'stylesheet';
-    document.head.appendChild(link);
-    return () => {
-      document.head.removeChild(link);
+    const loadScript = (src: string): Promise<void> => {
+      return new Promise((resolve, reject) => {
+        if (document.querySelector(`script[src="${src}"]`)) {
+          resolve();
+          return;
+        }
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = () => resolve();
+        script.onerror = () => reject();
+        document.body.appendChild(script);
+      });
     };
+
+    const initThree = async () => {
+      try {
+        await loadScript('https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js');
+        await loadScript('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js');
+        setIsLoaded(true);
+      } catch (err) {
+        console.error('Failed to load Three.js:', err);
+      }
+    };
+
+    initThree();
   }, []);
 
-  // Gyroscope handlers & permission request for iOS
+  // Gyroscope permission checker for iOS
   useEffect(() => {
     const checkOrientation = () => {
       if (typeof DeviceOrientationEvent !== 'undefined' && 'requestPermission' in DeviceOrientationEvent) {
-        setHasPermission(false); // iOS requires user gesture trigger
+        setHasPermission(false);
       } else {
         setHasPermission(true);
         window.addEventListener('deviceorientation', handleOrientation);
@@ -53,11 +70,10 @@ export const BalloonBirthdayScene = ({ onComplete }: BalloonBirthdaySceneProps) 
     let targetY = 0;
 
     if (Math.abs(beta) > deadzone) {
-      // Map forward/back tilt (beta 30 to 70 is normal phone viewing angle)
-      targetX = Math.max(-25, Math.min(25, (beta - 45) * 0.7));
+      targetX = Math.max(-20, Math.min(20, (beta - 45) * 0.5));
     }
     if (Math.abs(gamma) > deadzone) {
-      targetY = Math.max(-30, Math.min(30, gamma * 0.7));
+      targetY = Math.max(-25, Math.min(25, gamma * 0.5));
     }
 
     targetRotation.current = { x: targetX, y: targetY };
@@ -80,258 +96,541 @@ export const BalloonBirthdayScene = ({ onComplete }: BalloonBirthdaySceneProps) 
     }
   };
 
-  // Mouse / Touch Drag fallback
-  const handleStart = (clientX: number, clientY: number) => {
-    isDragging.current = true;
-    dragStart.current = { x: clientX, y: clientY };
-  };
-
-  const handleMove = (clientX: number, clientY: number) => {
-    if (!isDragging.current) return;
-    const dx = clientX - dragStart.current.x;
-    const dy = clientY - dragStart.current.y;
-
-    targetRotation.current = {
-      x: Math.max(-35, Math.min(35, targetRotation.current.x - dy * 0.45)),
-      y: Math.max(-40, Math.min(40, targetRotation.current.y + dx * 0.45))
-    };
-    dragStart.current = { x: clientX, y: clientY };
-  };
-
-  const handleEnd = () => {
-    isDragging.current = false;
-  };
-
-  // Animation rendering loop with lerp smoothing (0.1 damping coefficient)
+  // Three.js WebGL Render Cycle
   useEffect(() => {
-    let animId: number;
+    if (!isLoaded || !containerRef.current) return;
 
-    const tick = () => {
-      currentRotation.current.x += (targetRotation.current.x - currentRotation.current.x) * 0.1;
-      currentRotation.current.y += (targetRotation.current.y - currentRotation.current.y) * 0.1;
+    const THREE = (window as any).THREE;
+    const container = containerRef.current;
+    
+    // 1. Scene & Render
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x35070e); // Rich royal red velvet base
+    
+    // Atmospheric fog matching background color
+    scene.fog = new THREE.FogExp2(0x35070e, 0.012);
 
-      setRotation({
-        x: currentRotation.current.x,
-        y: currentRotation.current.y
+    // 2. Camera Setup
+    const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 1, 1000);
+    // Position further away for mobile screen adjustments
+    const isMobile = window.innerWidth < 768;
+    camera.position.set(0, 4, isMobile ? 54 : 44);
+
+    // 3. WebGL Renderer
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance" });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.1;
+    container.appendChild(renderer.domElement);
+
+    // 4. OrbitControls Setup (fallback)
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.minDistance = 20;
+    controls.maxDistance = 80;
+    controls.maxPolarAngle = Math.PI / 2 + 0.1; // lock camera angles slightly
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 0.3;
+
+    // 5. Main Parenting Scale Group for Mobile Responsiveness
+    const mainGroup = new THREE.Group();
+    if (isMobile) {
+      mainGroup.scale.set(0.72, 0.72, 0.72);
+      mainGroup.position.set(0, 1.5, 0);
+    } else {
+      mainGroup.position.set(0, 0, 0);
+    }
+    scene.add(mainGroup);
+
+    // 6. Lighting configuration (Velvet Red & Rich Gold tones)
+    const setupLighting = () => {
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.45);
+      scene.add(ambientLight);
+
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      dirLight.position.set(10, 35, 15);
+      dirLight.castShadow = true;
+      dirLight.shadow.mapSize.width = 1024;
+      dirLight.shadow.mapSize.height = 1024;
+      scene.add(dirLight);
+
+      // Gold warm fill lighting to illuminate letters and cake wicks
+      const goldPointLight = new THREE.PointLight(0xffd700, 3.5, 50);
+      goldPointLight.position.set(0, 8, 12);
+      scene.add(goldPointLight);
+
+      // Rich magenta/crimson bounce rim light on high-spec objects
+      const bounceRimLight = new THREE.PointLight(0xff0044, 4.0, 40);
+      bounceRimLight.position.set(-15, -4, 10);
+      scene.add(bounceRimLight);
+    };
+    setupLighting();
+
+    // Materials mapping for Royal Velvet theme
+    const velvetRedMaterial = new THREE.MeshPhysicalMaterial({
+      color: 0x800020, // Royal Burgundy
+      roughness: 0.35,
+      metalness: 0.1,
+      clearcoat: 0.3,
+      clearcoatRoughness: 0.35,
+      name: 'velvetRed'
+    });
+
+    const glossyGoldMaterial = new THREE.MeshPhysicalMaterial({
+      color: 0xffd700, // Gold
+      roughness: 0.1,
+      metalness: 0.85,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.05,
+      name: 'glossyGold'
+    });
+
+    const frostingMaterial = new THREE.MeshPhysicalMaterial({
+      color: 0xffeef2, // Rich Cream Frosting
+      roughness: 0.25,
+      clearcoat: 0.6,
+      name: 'creamFrosting'
+    });
+
+    // 7. BUILD STAGE platforms
+    const buildStage = () => {
+      const geom = new THREE.CylinderGeometry(15, 15.5, 1.5, 48);
+      const mesh = new THREE.Mesh(geom, velvetRedMaterial);
+      mesh.position.y = -8.5;
+      mesh.receiveShadow = true;
+      mainGroup.add(mesh);
+    };
+    buildStage();
+
+    // 8. BUILD CAKE (Bottom section)
+    let candleFlame: any;
+    const buildCake = () => {
+      const cakeGroup = new THREE.Group();
+      cakeGroup.position.set(-4.5, -7.7, -1);
+
+      // Cake bottom
+      const bottomGeom = new THREE.CylinderGeometry(3.6, 3.6, 2.2, 40);
+      const bottomMesh = new THREE.Mesh(bottomGeom, velvetRedMaterial);
+      bottomMesh.position.y = 1.1;
+      bottomMesh.castShadow = true;
+      bottomMesh.receiveShadow = true;
+      cakeGroup.add(bottomMesh);
+
+      // Cream Frosting ring 1
+      const frosting1Geom = new THREE.TorusGeometry(3.5, 0.3, 16, 40);
+      const frosting1 = new THREE.Mesh(frosting1Geom, frostingMaterial);
+      frosting1.rotation.x = Math.PI / 2;
+      frosting1.position.y = 2.2;
+      cakeGroup.add(frosting1);
+
+      // Cake top
+      const topGeom = new THREE.CylinderGeometry(2.6, 2.6, 1.8, 40);
+      const topMesh = new THREE.Mesh(topGeom, velvetRedMaterial);
+      topMesh.position.y = 3.1;
+      topMesh.castShadow = true;
+      cakeGroup.add(topMesh);
+
+      // Cream Frosting ring 2
+      const frosting2Geom = new THREE.TorusGeometry(2.5, 0.25, 16, 40);
+      const frosting2 = new THREE.Mesh(frosting2Geom, frostingMaterial);
+      frosting2.rotation.x = Math.PI / 2;
+      frosting2.position.y = 4.0;
+      cakeGroup.add(frosting2);
+
+      // Gold Candle
+      const candleGeom = new THREE.CylinderGeometry(0.12, 0.12, 2.0, 12);
+      const candle = new THREE.Mesh(candleGeom, glossyGoldMaterial);
+      candle.position.y = 5.0;
+      candle.castShadow = true;
+      cakeGroup.add(candle);
+
+      // Candle Flame
+      const flameGeom = new THREE.ConeGeometry(0.2, 0.6, 12);
+      flameGeom.translate(0, 0.3, 0);
+      const flameMat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
+      candleFlame = new THREE.Mesh(flameGeom, flameMat);
+      candleFlame.position.set(0, 6.0, 0);
+      
+      const flameLight = new THREE.PointLight(0xff6a00, 1.2, 8);
+      flameLight.position.set(0, 0.2, 0);
+      candleFlame.add(flameLight);
+
+      cakeGroup.add(candleFlame);
+      mainGroup.add(cakeGroup);
+    };
+    buildCake();
+
+    // 9. BUILD GIFT BOX (Bottom right section)
+    let giftBoxObj: any;
+    let isBoxClicked = false;
+    const buildGiftBox = () => {
+      const giftGroup = new THREE.Group();
+      giftGroup.position.set(4.5, -7.7, 2);
+
+      // Box body
+      const boxGeom = new THREE.BoxGeometry(3.6, 3.6, 3.6);
+      giftBoxObj = new THREE.Mesh(boxGeom, velvetRedMaterial);
+      giftBoxObj.position.y = 1.8;
+      giftBoxObj.castShadow = true;
+      giftBoxObj.receiveShadow = true;
+      giftBoxObj.userData = { clickable: true };
+      giftGroup.add(giftBoxObj);
+
+      // Gold Ribbon lines
+      const ribbonVGeom = new THREE.BoxGeometry(0.5, 3.7, 3.7);
+      const ribbonV = new THREE.Mesh(ribbonVGeom, glossyGoldMaterial);
+      ribbonV.position.y = 1.8;
+      giftBoxObj.add(ribbonV);
+
+      const ribbonHGeom = new THREE.BoxGeometry(3.7, 3.7, 0.5);
+      const ribbonH = new THREE.Mesh(ribbonHGeom, glossyGoldMaterial);
+      ribbonH.position.y = 1.8;
+      giftBoxObj.add(ribbonH);
+
+      // Top ribbon knot spheres
+      const knotGeom = new THREE.SphereGeometry(0.4, 16, 16);
+      const knot = new THREE.Mesh(knotGeom, glossyGoldMaterial);
+      knot.position.y = 3.8;
+      giftGroup.add(knot);
+
+      mainGroup.add(giftGroup);
+    };
+    buildGiftBox();
+
+    // 10. BUILD PROCEDURAL 3D PUFFY BUBBLE LETTERS (HAPPY BIRTHDAY)
+    const LETTER_STROKES = {
+      'H': [
+        { start: [-1.2, 1.2], end: [-1.2, -1.2] },
+        { start: [1.2, 1.2], end: [1.2, -1.2] },
+        { start: [-1.2, 0], end: [1.2, 0] }
+      ],
+      'A': [
+        { start: [-1.2, -1.2], end: [0, 1.2] },
+        { start: [0, 1.2], end: [1.2, -1.2] },
+        { start: [-0.6, -0.2], end: [0.6, -0.2] }
+      ],
+      'P': [
+        { start: [-1.0, 1.2], end: [-1.0, -1.2] },
+        { start: [-1.0, 1.2], end: [0.4, 1.2] },
+        { start: [0.4, 1.2], end: [0.4, 0.1] },
+        { start: [0.4, 0.1], end: [-1.0, 0.1] }
+      ],
+      'Y': [
+        { start: [-1.2, 1.2], end: [0, 0] },
+        { start: [1.2, 1.2], end: [0, 0] },
+        { start: [0, 0], end: [0, -1.2] }
+      ],
+      'B': [
+        { start: [-1.0, 1.2], end: [-1.0, -1.2] },
+        { start: [-1.0, 1.2], end: [0.3, 1.2] },
+        { start: [0.3, 1.2], end: [0.3, 0.1] },
+        { start: [0.3, 0.1], end: [-1.0, 0.1] },
+        { start: [-1.0, 0.1], end: [0.5, 0.1] },
+        { start: [0.5, 0.1], end: [0.5, -1.2] },
+        { start: [0.5, -1.2], end: [-1.0, -1.2] }
+      ],
+      'I': [
+        { start: [0, 1.2], end: [0, -1.2] },
+        { start: [-0.8, 1.2], end: [0.8, 1.2] },
+        { start: [-0.8, -1.2], end: [0.8, -1.2] }
+      ],
+      'R': [
+        { start: [-1.0, 1.2], end: [-1.0, -1.2] },
+        { start: [-1.0, 1.2], end: [0.4, 1.2] },
+        { start: [0.4, 1.2], end: [0.4, 0.1] },
+        { start: [0.4, 0.1], end: [-1.0, 0.1] },
+        { start: [-0.2, 0.1], end: [0.8, -1.2] }
+      ],
+      'T': [
+        { start: [-1.2, 1.2], end: [1.2, 1.2] },
+        { start: [0, 1.2], end: [0, -1.2] }
+      ],
+      'D': [
+        { start: [-1.0, 1.2], end: [-1.0, -1.2] },
+        { start: [-1.0, 1.2], end: [0.2, 1.2] },
+        { start: [0.2, 1.2], end: [0.7, 0.5] },
+        { start: [0.7, 0.5], end: [0.7, -0.5] },
+        { start: [0.7, -0.5], end: [0.2, -1.2] },
+        { start: [0.2, -1.2], end: [-1.0, -1.2] }
+      ]
+    };
+
+    const createProceduralLetter = (char: string, geom: any, mat: any) => {
+      const letterGroup = new THREE.Group();
+      const strokes = (LETTER_STROKES as any)[char];
+      if (!strokes) return letterGroup;
+
+      strokes.forEach((stroke: any) => {
+        const startPt = new THREE.Vector2(stroke.start[0], stroke.start[1]);
+        const endPt = new THREE.Vector2(stroke.end[0], stroke.end[1]);
+        const distance = startPt.distanceTo(endPt);
+        const steps = Math.max(12, Math.floor(distance * 10));
+
+        for (let j = 0; j <= steps; j++) {
+          const t = j / steps;
+          const x = THREE.MathUtils.lerp(startPt.x, endPt.x, t);
+          const y = THREE.MathUtils.lerp(startPt.y, endPt.y, t);
+
+          const ball = new THREE.Mesh(geom, mat);
+          ball.position.set(x, y, 0);
+          ball.castShadow = true;
+          letterGroup.add(ball);
+        }
+      });
+      return letterGroup;
+    };
+
+    const buildPuffyLetters = () => {
+      const ballGeom = new THREE.SphereGeometry(0.38, 16, 16);
+      
+      // Render "HAPPY" on top
+      const happyWords = "HAPPY";
+      const happySpacing = 2.4;
+      const happyStartX = -((happyWords.length - 1) * happySpacing) / 2;
+
+      for (let i = 0; i < happyWords.length; i++) {
+        const letter = createProceduralLetter(happyWords[i], ballGeom, glossyGoldMaterial);
+        letter.position.set(happyStartX + (i * happySpacing), 6.5, 0);
+        letter.userData = { originalY: 6.5, phase: i * 0.6 };
+        mainGroup.add(letter);
+      }
+
+      // Render "BIRTHDAY" on bottom
+      const bdayWords = "BIRTHDAY";
+      const bdaySpacing = 1.9;
+      const bdayStartX = -((bdayWords.length - 1) * bdaySpacing) / 2;
+
+      for (let i = 0; i < bdayWords.length; i++) {
+        const letter = createProceduralLetter(bdayWords[i], ballGeom, glossyGoldMaterial);
+        letter.position.set(bdayStartX + (i * bdaySpacing), -3.0, 0);
+        letter.userData = { originalY: -3.0, phase: i * 0.5 + 2.0 };
+        mainGroup.add(letter);
+      }
+    };
+    buildPuffyLetters();
+
+    // 11. BUILD 19th ORB (Centerpiece)
+    let glassOrb: any;
+    const buildGlassOrb = () => {
+      const orbGroup = new THREE.Group();
+      orbGroup.position.set(0, 1.8, 0);
+
+      // Translucent glossy glass shell
+      const glassMat = new THREE.MeshPhysicalMaterial({
+        color: 0xffd700,
+        roughness: 0.05,
+        metalness: 0.1,
+        transparent: true,
+        opacity: 0.35,
+        transmission: 0.9,
+        thickness: 1.2,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.02
       });
 
-      animId = requestAnimationFrame(tick);
-    };
+      const sphereGeom = new THREE.SphereGeometry(2.6, 32, 32);
+      glassOrb = new THREE.Mesh(sphereGeom, glassMat);
+      glassOrb.castShadow = true;
+      orbGroup.add(glassOrb);
 
-    tick();
-    return () => cancelAnimationFrame(animId);
-  }, []);
+      // Inner glowing core
+      const coreGeom = new THREE.SphereGeometry(1.0, 16, 16);
+      const coreMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+      const core = new THREE.Mesh(coreGeom, coreMat);
+      
+      const coreLight = new THREE.PointLight(0xffa500, 2.5, 12);
+      core.add(coreLight);
+      orbGroup.add(core);
+
+      mainGroup.add(orbGroup);
+    };
+    buildGlassOrb();
+
+    // 12. Floating Bubbles (Decorative background)
+    const bubbleMeshes: any[] = [];
+    const buildBubbles = () => {
+      const bubbleMat = new THREE.MeshPhysicalMaterial({
+        color: 0xffbbcc,
+        roughness: 0.02,
+        metalness: 0.1,
+        transparent: true,
+        opacity: 0.3,
+        transmission: 0.95,
+        thickness: 0.5,
+        clearcoat: 1.0,
+      });
+
+      const bubbleGeom = new THREE.SphereGeometry(0.8, 16, 16);
+
+      for (let i = 0; i < 22; i++) {
+        const bubble = new THREE.Mesh(bubbleGeom, bubbleMat);
+        bubble.position.set(
+          (Math.random() - 0.5) * 35,
+          (Math.random() - 0.5) * 30 + 2,
+          (Math.random() - 0.5) * 20 - 4
+        );
+        bubble.userData = {
+          speedY: 0.015 + Math.random() * 0.02,
+          phase: Math.random() * Math.PI * 2,
+          amplitude: 0.01 + Math.random() * 0.015
+        };
+        mainGroup.add(bubble);
+        bubbleMeshes.push(bubble);
+      }
+    };
+    buildBubbles();
+
+    // 13. Interaction Raycasting for present box click
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    const handlePointerDown = (e: MouseEvent) => {
+      // Calculate normalized mouse coords
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(scene.children, true);
+
+      // Check if clicked object belongs to the present box
+      const giftClicked = intersects.some(
+        (intersect) =>
+          intersect.object === giftBoxObj || intersect.object.parent === giftBoxObj
+      );
+
+      if (giftClicked && !isBoxClicked) {
+        isBoxClicked = true;
+        
+        // Explosion / Pop animation scale effect
+        let animationStep = 0;
+        const animateClick = () => {
+          if (animationStep < 20) {
+            giftBoxObj.scale.addScalar(0.04);
+            giftBoxObj.rotation.y += 0.15;
+            animationStep++;
+            requestAnimationFrame(animateClick);
+          } else {
+            // Unboxed! Trigger navigation to letter screen
+            onComplete();
+          }
+        };
+        animateClick();
+      }
+    };
+    renderer.domElement.addEventListener('click', handlePointerDown);
+
+    // 14. Render loop
+    let animId: number;
+    let clock = new THREE.Clock();
+
+    const animate = () => {
+      const elapsed = clock.getElapsedTime();
+
+      // Gyroscope tilt lerping
+      currentRotation.current.x += (targetRotation.current.x - currentRotation.current.x) * 0.08;
+      currentRotation.current.y += (targetRotation.current.y - currentRotation.current.y) * 0.08;
+
+      mainGroup.rotation.x = currentRotation.current.x * (Math.PI / 180);
+      mainGroup.rotation.y = currentRotation.current.y * (Math.PI / 180);
+
+      // Letter floating animations
+      mainGroup.children.forEach((child: any) => {
+        if (child.userData && child.userData.originalY !== undefined) {
+          child.position.y = child.userData.originalY + Math.sin(elapsed * 1.5 + child.userData.phase) * 0.22;
+        }
+      });
+
+      // Flame winking/flickering scale
+      if (candleFlame) {
+        const scaleVal = 1.0 + Math.sin(elapsed * 18) * 0.06;
+        candleFlame.scale.set(scaleVal, scaleVal, scaleVal);
+      }
+
+      // Glass orb wobble
+      if (glassOrb) {
+        glassOrb.rotation.y = elapsed * 0.35;
+        glassOrb.rotation.z = Math.sin(elapsed * 0.6) * 0.08;
+      }
+
+      // Bubbles movement upwards
+      bubbleMeshes.forEach((bubble) => {
+        bubble.position.y += bubble.userData.speedY;
+        bubble.position.x += Math.sin(elapsed + bubble.userData.phase) * bubble.userData.amplitude;
+        
+        // Wrap around when bubble floats above screen
+        if (bubble.position.y > 18) {
+          bubble.position.y = -18;
+        }
+      });
+
+      controls.update();
+      renderer.render(scene, camera);
+      animId = requestAnimationFrame(animate);
+    };
+    animate();
+
+    // Cleanup
+    return () => {
+      cancelAnimationFrame(animId);
+      renderer.domElement.removeEventListener('click', handlePointerDown);
+      if (container.contains(renderer.domElement)) {
+        container.removeChild(renderer.domElement);
+      }
+      controls.dispose();
+      renderer.dispose();
+    };
+  }, [isLoaded]);
 
   return (
     <div 
       ref={containerRef}
-      className="fixed inset-0 w-full h-full z-50 flex flex-col justify-between items-center py-10 select-none overflow-hidden"
+      className="fixed inset-0 w-full h-full z-50 flex flex-col justify-between items-center py-8 select-none overflow-hidden"
       style={{
-        background: 'var(--bg-color, #6EC1E4)',
+        background: '#35070e', // Fallback rich royal burgundy red background
         perspective: '1000px',
         touchAction: 'none'
       }}
-      onTouchStart={(e) => handleStart(e.touches[0].clientX, e.touches[0].clientY)}
-      onTouchMove={(e) => handleMove(e.touches[0].clientX, e.touches[0].clientY)}
-      onTouchEnd={handleEnd}
-      onMouseDown={(e) => handleStart(e.clientX, e.clientY)}
-      onMouseMove={(e) => handleMove(e.clientX, e.clientY)}
-      onMouseUp={handleEnd}
-      onMouseLeave={handleEnd}
     >
-      {/* Exposing Configurable CSS Custom Properties for ease of customization later */}
-      <style>{`
-        :root {
-          --bg-color: #6ec1e4;
-          --bubble-primary: #4ecdc4;
-          --bubble-highlight: #ff6b9d;
-          --bubble-rim: #a8e6cf;
-          --bubble-glow: #e0fdf5;
-          --text-19th: #ffd700;
-          --flourish-color: #ff6b9d;
-        }
-
-        /* 3D Glossy Bubble Text rendering */
-        .bubble-text {
-          font-family: 'DynaPuff', cursive, sans-serif;
-          font-weight: 700;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          fill: url(#bubble-gradient);
-          filter: drop-shadow(0px 8px 16px rgba(0, 0, 0, 0.15));
-        }
-
-        /* Glossy Highlight stroke overlay mimicking plastic/liquid reflection */
-        .glossy-specular-light {
-          fill: none;
-          stroke: #ffffff;
-          stroke-width: 4px;
-          stroke-linecap: round;
-          opacity: 0.85;
-          filter: blur(0.5px);
-        }
-
-        /* Iridescent soapy bubble gradient texture */
-        .soapy-bubble {
-          background: radial-gradient(
-            circle at 35% 35%,
-            var(--bubble-glow) 0%,
-            rgba(255, 255, 255, 0.45) 20%,
-            rgba(78, 205, 196, 0.5) 50%,
-            rgba(255, 107, 157, 0.55) 80%,
-            rgba(168, 230, 207, 0.6) 100%
-          );
-          border: 1px solid rgba(255, 255, 255, 0.65);
-          box-shadow: 
-            inset -8px -8px 20px rgba(0, 0, 0, 0.12),
-            inset 8px 8px 20px rgba(255, 255, 255, 0.7),
-            0 12px 24px rgba(0, 0, 0, 0.12);
-        }
-      `}</style>
-
-      {/* Dynamic SVG Gradient definitions for clean vector bubbles */}
-      <svg width="0" height="0" className="absolute pointer-events-none">
-        <defs>
-          {/* Main bubbly text gradient fill */}
-          <linearGradient id="bubble-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="var(--bubble-rim)" />
-            <stop offset="35%" stopColor="var(--bubble-primary)" />
-            <stop offset="75%" stopColor="#a072ff" />
-            <stop offset="100%" stopColor="var(--bubble-highlight)" />
-          </linearGradient>
-        </defs>
-      </svg>
-
-      {/* Header permission handler button */}
+      {/* Dynamic Permissions overlays for iOS motion */}
       <div className="z-50 h-8 flex items-center">
         {hasPermission === false && (
           <button 
             onClick={requestPermission}
-            className="px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider bg-white/20 border border-white/30 text-white cursor-pointer active:scale-95 transition-all"
+            className="px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider bg-white/10 border border-white/20 text-[#ffb3b5] hover:bg-white/15 cursor-pointer active:scale-95 transition-all shadow-md"
           >
             Enable Motion Controls 📱
           </button>
         )}
       </div>
 
-      {/* Main 3D Interactive Composition */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.8, ease: 'easeOut' }}
-        style={{
-          transformStyle: 'preserve-3d',
-          transform: `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
-        }}
-        className="w-full flex-1 flex flex-col items-center justify-center relative select-none cursor-grab active:cursor-grabbing animate-[float-idle_4.5s_ease-in-out_infinite]"
-      >
-        
-        {/* Floating Bubble Spheres Behind (Z-depth) */}
-        <div 
-          style={{ transform: 'translateZ(-160px) translateY(-80px) translateX(-110px)' }}
-          className="absolute w-24 h-24 rounded-full soapy-bubble animate-[bob-independent_5s_ease-in-out_infinite]"
-        />
-        <div 
-          style={{ transform: 'translateZ(-90px) translateY(120px) translateX(120px)' }}
-          className="absolute w-20 h-20 rounded-full soapy-bubble animate-[bob-independent-staggered_3.8s_ease-in-out_infinite]"
-        />
-
-        {/* LINE 1: HAPPY (Styled SVG bubble text with specular highlight layer) */}
-        <div 
-          style={{ transform: 'translateZ(50px)' }}
-          className="w-full max-w-[280px] sm:max-w-[340px] drop-shadow-[0_12px_24px_rgba(0,0,0,0.18)]"
-        >
-          <svg viewBox="0 0 320 80" className="w-full h-auto overflow-visible select-none">
-            {/* 3D Extrusion layer */}
-            <text x="160" y="60" textAnchor="middle" className="bubble-text text-6xl" fill="rgba(0,0,0,0.15)" transform="translate(0, 4)" style={{ fontFamily: 'DynaPuff' }}>HAPPY</text>
-            {/* Main bubble text */}
-            <text x="160" y="60" textAnchor="middle" className="bubble-text text-6xl" style={{ fontFamily: 'DynaPuff' }}>HAPPY</text>
-            {/* White glossy specular highlight curves overlaying top-left curves */}
-            <path d="M 62 38 Q 66 32 72 32 M 112 38 Q 116 32 122 32 M 162 38 Q 166 32 172 32 M 212 38 Q 216 32 222 32 M 262 38 Q 266 32 272 32" className="glossy-specular-light" />
-          </svg>
-        </div>
-
-        {/* CENTER ELEMENT: 19th script */}
-        <motion.div 
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25, duration: 0.7 }}
-          style={{ transform: 'translateZ(110px)' }}
-          className="relative my-2 flex items-center justify-center select-none"
-        >
-          {/* Swirling vine flourishes */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
-            <svg width="220" height="120" viewBox="0 0 220 120" fill="none" className="opacity-90">
-              <path d="M40 60 C80 30, 100 20, 110 50 C115 65, 95 85, 110 95 C125 105, 140 70, 180 60" stroke="var(--flourish-color)" strokeWidth="3.5" strokeLinecap="round" />
-              <path d="M60 40 C75 15, 105 10, 110 40 C115 70, 130 80, 160 80" stroke="var(--flourish-color)" strokeWidth="2.5" strokeDasharray="4,4" strokeLinecap="round" />
-            </svg>
-          </div>
-
-          {/* Fleur De Leah large 19th display */}
-          <div className="relative z-10 text-[var(--text-19th)] text-7.5xl sm:text-8.5xl select-none font-bold drop-shadow-[0_4px_12px_rgba(0,0,0,0.35)] flex items-baseline leading-none">
-            <span style={{ fontFamily: "'Fleur De Leah', cursive", fontWeight: 'bold' }}>19</span>
-            <span className="text-xl sm:text-2xl font-serif text-white align-super font-semibold ml-0.5">th</span>
-          </div>
-        </motion.div>
-
-        {/* LINE 2: BIRTHDAY (Styled SVG bubble text with specular highlight layer) */}
-        <div 
-          style={{ transform: 'translateZ(30px)' }}
-          className="w-full max-w-[320px] sm:max-w-[400px] drop-shadow-[0_12px_24px_rgba(0,0,0,0.18)]"
-        >
-          <svg viewBox="0 0 400 80" className="w-full h-auto overflow-visible select-none">
-            {/* Extrusion */}
-            <text x="200" y="60" textAnchor="middle" className="bubble-text text-6xl" fill="rgba(0,0,0,0.15)" transform="translate(0, 4)" style={{ fontFamily: 'DynaPuff' }}>BIRTHDAY</text>
-            {/* Main text */}
-            <text x="200" y="60" textAnchor="middle" className="bubble-text text-6xl" style={{ fontFamily: 'DynaPuff' }}>BIRTHDAY</text>
-            {/* Glossy specular reflection path curves */}
-            <path d="M 42 38 Q 46 32 52 32 M 90 38 Q 94 32 100 32 M 142 38 Q 146 32 152 32 M 190 38 Q 194 32 200 32 M 238 38 Q 242 32 248 32 M 288 38 Q 292 32 298 32 M 342 38 Q 346 32 352 32" className="glossy-specular-light" />
-          </svg>
-        </div>
-
-        {/* Floating Bubble Spheres In Front (Z-depth) */}
-        <div 
-          style={{ transform: 'translateZ(130px) translateY(-120px) translateX(90px)' }}
-          className="absolute w-20 h-20 rounded-full soapy-bubble animate-[bob-independent-staggered_4.2s_ease-in-out_infinite]"
-        />
-        <div 
-          style={{ transform: 'translateZ(170px) translateY(80px) translateX(-120px)' }}
-          className="absolute w-14 h-14 rounded-full soapy-bubble animate-[bob-independent_6s_ease-in-out_infinite]"
-        />
-        <div 
-          style={{ transform: 'translateZ(70px) translateY(100px) translateX(-20px)' }}
-          className="absolute w-12 h-12 rounded-full soapy-bubble animate-[bob-independent_4.8s_ease-in-out_infinite]"
-        />
-        
-      </motion.div>
-
-      {/* Navigation button to enter the main letters */}
-      <div className="z-50 px-6 w-full max-w-xs mb-4">
-        <button
-          onClick={onComplete}
-          className="w-full py-4 rounded-full bg-white text-[#6EC1E4] hover:bg-white/95 font-semibold text-sm uppercase tracking-wider shadow-2xl active:scale-95 transition-all cursor-pointer text-center"
-        >
-          Step Inside ➔
-        </button>
+      {/* Floating hints */}
+      <div className="absolute top-16 left-4 right-4 z-10 text-center pointer-events-none">
+        <h3 className="font-serif italic text-2xl text-[#ffd700] drop-shadow-md tracking-wide">
+          Happy 19th Birthday
+        </h3>
+        <p className="text-[10px] text-[#ffb3b5]/60 uppercase tracking-widest font-sans mt-1">
+          Tap the red velvet present box to open 🎁
+        </p>
       </div>
 
-      {/* CSS Animation Keyframes */}
-      <style>{`
-        @keyframes float-idle {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-10px); }
-        }
+      {/* THREE.JS CANVAS TARGET VIEWPORT MOUNTED HERE */}
+      {!isLoaded && (
+        <div className="flex-1 flex items-center justify-center text-white/50 text-xs tracking-widest uppercase">
+          Loading 3D Birthday Space...
+        </div>
+      )}
 
-        @keyframes bob-independent {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          50% { transform: translateY(-16px) rotate(4deg); }
-        }
-
-        @keyframes bob-independent-staggered {
-          0%, 100% { transform: translateY(-12px) rotate(-3deg); }
-          50% { transform: translateY(12px) rotate(3deg); }
-        }
-      `}</style>
+      {/* Dynamic UI HUD guide */}
+      <div className="absolute bottom-6 z-10 text-center pointer-events-none">
+        <p className="text-[9px] text-[#ffb3b5]/40 tracking-wider font-sans uppercase">
+          Drag to Orbit • Tilt Phone for Gyro 3D
+        </p>
+      </div>
     </div>
   );
 };
