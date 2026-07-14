@@ -24,11 +24,14 @@ interface BirthdayViewProps {
 type Stage = 'countdown' | 'cake' | 'unwrap' | 'vapor' | 'balloon-scene' | 'letter';
 
 const STORY_SEGMENTS = [
-  "Dearest Isha, Happy birthday to the most beautiful, loving, and amazing person in my world.",
-  "From the moment you entered my life, you turned every simple corner of it into a magical sanctuary. Even in moments of distance, you are the whisper in the wind that brings me warmth.",
-  "I built this secret garden just for you—a small space to remind you of how cherished, loved, and valued you are, every single second of the day. May this year bring you all the warmth, laughter, and stars that you deserve.",
-  "I promise to always be here, to celebrate your happiest days, and to hold your hand through the stormy ones.",
-  "Forever and always yours, ❤️"
+  "Meri jaan, Wishing you a really really Happy Birthday !!! 💋💋💋",
+  "And a very Big Hug 🤗🤗 from your Hubby (your big boy).",
+  "I wish ki aage aane wali teri zindagi teri tarah khubsurat ho. Tu khush rahe aur aane wale dukhon mein zyada dukhi na ho.",
+  "You are my everything my love, and I just don't have enough words how Happy I am to be yours, to be able to spend my life with you my lifeline (meri khoon ki pipeline 😆).",
+  "You are just so perfect I can't help but smile while thinking about you.",
+  "By the way, now you can open the final letter that i gave you on our last date, usme bhi bohot kuch likha hai padh liyo araam se (bolegi kitna likhta hai padhti rah jaungi zindagi bhar).",
+  "This might not be my best work. Designing is not really my thing, but i tried my best to make this. Kayi jagah ab bhi galtiyan hain kayi. Leave that aside, ye batao aap...",
+  "Will you make me your man? ❤️"
 ];
 
 // EASY-TO-EDIT Photo Configuration list for background floating images.
@@ -571,12 +574,9 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
               <div className="w-full flex flex-col justify-center min-h-[70vh] text-center px-4 relative z-10">
                 {!proposalSent ? (
                   <div className="flex flex-col gap-5 py-6 max-w-md mx-auto w-full rounded-3xl p-6 sm:p-8 bg-black/45 border border-white/5 shadow-2xl">
-                    <h3 className="font-serif italic text-3xl sm:text-4xl text-[#ffb3b5]">
-                      Will this birthday girl be my Forever?
+                    <h3 className="font-serif italic text-3xl sm:text-4xl text-[#ffb3b5] leading-normal">
+                      Will this birthday girl be my Forever? 💍
                     </h3>
-                    <h4 className="font-serif italic text-4xl sm:text-5.5xl text-[#ffd700] animate-pulse drop-shadow-[0_0_10px_rgba(255,215,0,0.2)]">
-                      My Wife? 💍
-                    </h4>
 
                     <div className="mt-4 flex flex-col gap-4">
                       <textarea
