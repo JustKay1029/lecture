@@ -88,15 +88,7 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
     return () => clearInterval(interval);
   }, []);
 
-  // Inject Spline Hana-Viewer script when Stage changes to 'letter'
-  useEffect(() => {
-    if (stage === 'letter') {
-      const script = document.createElement('script');
-      script.type = 'module';
-      script.src = 'https://cdn.spline.design/@splinetool/hana-viewer@1.2.54/hana-viewer.js';
-      document.body.appendChild(script);
-    }
-  }, [stage]);
+
 
   // Sync scroll position
   useEffect(() => {
@@ -543,15 +535,13 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
                 </button>
               </div>
 
-              {/* SECTION 1: SPLINE 3D MOVING HEART EMBED (Substituted headers) */}
+              {/* SECTION 1: PULSING GLOWING 3D CSS HEART */}
               <div className="w-full flex flex-col items-center justify-center pt-8 relative z-10">
-                <div 
-                  className="w-full h-[320px] flex items-center justify-center overflow-hidden rounded-3xl relative"
-                  style={{ background: 'transparent' }}
-                  dangerouslySetInnerHTML={{
-                    __html: `<hana-viewer url="https://prod.spline.design/gpPLS1ZCg20hpyjp-Fv8/scene.hanacode" style="width: 100%; height: 100%; background: transparent;"></hana-viewer>`
-                  }}
-                />
+                <div className="relative w-48 h-48 flex items-center justify-center animate-[float-idle_4s_ease-in-out_infinite]">
+                  <svg viewBox="0 0 100 100" className="w-28 h-28 fill-current text-[#ff6b9d] drop-shadow-[0_0_25px_rgba(255,107,157,0.7)] animate-[heart-pulse_1.8s_infinite_ease-in-out]">
+                    <path d="M50 88.271 C48.565 88.271, 10 52.871, 10 32.271 C10 17.271, 22.2 5.271, 37.2 5.271 C46 5.271, 50 11.271, 50 11.271 C50 11.271, 54 5.271, 62.8 5.271 C77.8 5.271, 90 17.271, 90 32.271 C90 52.871, 51.435 88.271, 50 88.271 Z" />
+                  </svg>
+                </div>
                 <p className="text-[10px] uppercase tracking-widest text-[#ffdada]/60 font-sans mt-4 animate-pulse">
                   Scroll down slowly to read...
                 </p>
@@ -636,6 +626,16 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
           </clipPath>
         </defs>
       </svg>
+      <style>{`
+        @keyframes heart-pulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.08); }
+        }
+        @keyframes float-idle {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-8px); }
+        }
+      `}</style>
     </div>
   );
 }
