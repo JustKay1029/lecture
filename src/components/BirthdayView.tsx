@@ -32,16 +32,15 @@ const STORY_SEGMENTS = [
 ];
 
 // EASY-TO-EDIT Photo Configuration list for background floating images.
-// You can edit, add, or sequence as many photos as you want!
 const MEMORY_PHOTOS = [
-  { id: 1, url: photo1, shape: 'circle', x: '10%', y: 800, size: 100 },
-  { id: 2, url: photo2, shape: 'heart', x: '75%', y: 1300, size: 110 },
-  { id: 3, url: photo3, shape: 'rounded', x: '12%', y: 1900, size: 115 },
-  { id: 4, url: photo4, shape: 'circle', x: '78%', y: 2500, size: 100 },
-  { id: 5, url: photo5, shape: 'rounded', x: '8%', y: 3100, size: 110 },
-  { id: 6, url: photo6, shape: 'heart', x: '72%', y: 3700, size: 105 },
-  { id: 7, url: photo7, shape: 'circle', x: '15%', y: 4300, size: 95 },
-  { id: 8, url: photo8, shape: 'rounded', x: '76%', y: 4900, size: 120 }
+  { id: 1, url: photo1, shape: 'circle', x: '10%', y: 900, size: 100 },
+  { id: 2, url: photo2, shape: 'heart', x: '75%', y: 1400, size: 110 },
+  { id: 3, url: photo3, shape: 'rounded', x: '12%', y: 2000, size: 115 },
+  { id: 4, url: photo4, shape: 'circle', x: '78%', y: 2600, size: 100 },
+  { id: 5, url: photo5, shape: 'rounded', x: '8%', y: 3200, size: 110 },
+  { id: 6, url: photo6, shape: 'heart', x: '72%', y: 3800, size: 105 },
+  { id: 7, url: photo7, shape: 'circle', x: '15%', y: 4400, size: 95 },
+  { id: 8, url: photo8, shape: 'rounded', x: '76%', y: 5000, size: 120 }
 ];
 
 export default function BirthdayView({ onBack }: BirthdayViewProps) {
@@ -88,6 +87,16 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  // Inject Spline Hana-Viewer script when Stage changes to 'letter'
+  useEffect(() => {
+    if (stage === 'letter') {
+      const script = document.createElement('script');
+      script.type = 'module';
+      script.src = 'https://cdn.spline.design/@splinetool/hana-viewer@1.2.54/hana-viewer.js';
+      document.body.appendChild(script);
+    }
+  }, [stage]);
 
   // Sync scroll position
   useEffect(() => {
@@ -218,10 +227,8 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
   };
 
   // Get current scroll-based background color style
-  // Starts true black at the top, fades to warm lovely cream/peach in the middle/proposal sections.
   const getBackgroundStyle = () => {
     if (stage !== 'letter') return '#000000';
-    // Smooth transition to dark ambient purple
     if (scrollY > 1200) {
       return 'linear-gradient(135deg, #11071d 0%, #04010a 100%)';
     }
@@ -475,7 +482,6 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
               {/* Dynamic Shifting Ambient Photos floating upwards behind text */}
               <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden min-h-[400vh]">
                 {MEMORY_PHOTOS.map((photo) => {
-                  // Determine read vs unread state based on scroll coordinates
                   const isRead = scrollY > photo.y - 280;
                   
                   return (
@@ -501,7 +507,6 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
                         opacity: isRead ? 0.08 : 0.28,
                       }}
                     >
-                      {/* CSS Heart masking support */}
                       <div 
                         className={`w-full h-full border border-white/10 overflow-hidden shadow-2xl bg-black/10 backdrop-blur-sm ${
                           photo.shape === 'circle' ? 'rounded-full' :
@@ -538,24 +543,27 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
                 </button>
               </div>
 
-              {/* SECTION 1: THE LOVE LETTER TEXT REVEAL */}
-              <div
-                className="w-full min-h-[120vh] flex flex-col justify-center py-20 relative z-10"
-              >
-                <div className="text-center mb-16">
-                  <h3 className="font-serif italic text-3xl sm:text-4xl text-[#ffb3b5] drop-shadow-md">
-                    To My Safe Place 🌹
-                  </h3>
-                  <p className="text-xs uppercase tracking-widest text-[#ffdada]/60 font-sans mt-2">
-                    Scroll down slowly to read...
-                  </p>
-                </div>
+              {/* SECTION 1: SPLINE 3D MOVING HEART EMBED (Substituted headers) */}
+              <div className="w-full flex flex-col items-center justify-center pt-8 relative z-10">
+                <div 
+                  className="w-full h-[320px] flex items-center justify-center overflow-hidden rounded-3xl relative"
+                  style={{ background: 'transparent' }}
+                  dangerouslySetInnerHTML={{
+                    __html: `<hana-viewer url="https://prod.spline.design/gpPLS1ZCg20hpyjp-Fv8/scene.hanacode" style="width: 100%; height: 100%; background: transparent;"></hana-viewer>`
+                  }}
+                />
+                <p className="text-[10px] uppercase tracking-widest text-[#ffdada]/60 font-sans mt-4 animate-pulse">
+                  Scroll down slowly to read...
+                </p>
+              </div>
 
+              {/* LETTER TEXT REVEAL SECTION */}
+              <div className="w-full min-h-[100vh] flex flex-col justify-center py-10 relative z-10">
                 <ReadingTextReveal storySegments={STORY_SEGMENTS} />
               </div>
 
               {/* SECTION 2: TRANSITION & FLOATING MEMORY LANE INTRO */}
-              <div className="min-h-[60vh] flex flex-col justify-center text-center px-4 relative z-10">
+              <div className="min-h-[50vh] flex flex-col justify-center text-center px-4 relative z-10">
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
@@ -572,12 +580,8 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
               {/* SECTION 3: THE PROPOSAL & MESSAGE SENDER */}
               <div className="w-full flex flex-col justify-center min-h-[70vh] text-center px-4 relative z-10">
                 {!proposalSent ? (
-                  <div 
-                    className="flex flex-col gap-5 py-6 max-w-md mx-auto w-full rounded-3xl p-6 sm:p-8 bg-black/45 border border-white/5 shadow-2xl"
-                  >
-                    <h3 
-                      className="font-serif italic text-3xl sm:text-4xl text-[#ffb3b5]"
-                    >
+                  <div className="flex flex-col gap-5 py-6 max-w-md mx-auto w-full rounded-3xl p-6 sm:p-8 bg-black/45 border border-white/5 shadow-2xl">
+                    <h3 className="font-serif italic text-3xl sm:text-4xl text-[#ffb3b5]">
                       Will this birthday girl be my Forever?
                     </h3>
                     <h4 className="font-serif italic text-4xl sm:text-5.5xl text-[#ffd700] animate-pulse drop-shadow-[0_0_10px_rgba(255,215,0,0.2)]">
@@ -610,8 +614,8 @@ export default function BirthdayView({ onBack }: BirthdayViewProps) {
                     className="flex flex-col items-center gap-4 py-6 max-w-sm mx-auto"
                   >
                     <span className="text-6xl animate-bounce">💖</span>
-                    <h3 className="font-serif italic text-3.5xl text-[#ffb3b5]">Answer Dispatched</h3>
-                    <p className="font-handwriting text-2.5xl text-white/95 leading-relaxed">
+                    <h3 className="font-serif italic text-2xl text-[#ffb3b5]">Answer Dispatched</h3>
+                    <p className="font-handwriting text-2xl text-white/95 leading-relaxed">
                       "Your response has been securely sent directly to my inbox. I love you."
                     </p>
                   </motion.div>
